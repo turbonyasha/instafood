@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.conf import settings
 
 
 class FoodgramUser(AbstractUser):
@@ -29,6 +30,11 @@ class FoodgramUser(AbstractUser):
 
     def __str__(self):
         return self.username
+    
+    def get_avatar_url(self):
+        if self.avatar:
+            return self.avatar.url  # Returns the URL of the image
+        return settings.MEDIA_URL + 'avatars/default-avatar.png'
 
 
 class Subscription(models.Model):

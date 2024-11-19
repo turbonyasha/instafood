@@ -1,0 +1,11 @@
+Django==3.2.3
+djangorestframework==3.12.4
+djoser==2.1.0
+djangorestframework-simplejwt==4.7.2
+webcolors==1.11.1
+psycopg2-binary==2.9.3
+Pillow==9.0.0
+PyYAML==6.0
+django-cors-headers==3.13.0
+python-dotenv==1.0.1
+gunicorn==20.1.0

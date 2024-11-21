@@ -11,6 +11,7 @@ class FoodgramUser(AbstractUser):
         ('user', 'Пользователь'),
         ('admin', 'Администратор')
     ]
+    email = models.EmailField(unique=True)
     role = models.CharField(
         max_length=max(len(role) for role, _ in ROLES),
         choices=ROLES,
@@ -30,10 +31,10 @@ class FoodgramUser(AbstractUser):
 
     def __str__(self):
         return self.username
-    
+
     def get_avatar_url(self):
         if self.avatar:
-            return self.avatar.url  # Returns the URL of the image
+            return self.avatar.url
         return settings.MEDIA_URL + 'avatars/default-avatar.png'
 
 

@@ -1,26 +1,11 @@
 from rest_framework import serializers, exceptions
+from django.shortcuts import get_object_or_404
 
 from .models import Tag, Recipe, Ingredient, RecipeIngredient
 from users.models import FoodgramUser
-from django.core.files.base import ContentFile
-import base64
 
-
-class Base64ImageField(serializers.ImageField):
-    def to_internal_value(self, data):
-        # Если полученный объект строка, и эта строка
-        # начинается с 'data:image'...
-        if isinstance(data, str) and data.startswith('data:image'):
-            # ...начинаем декодировать изображение из base64.
-            # Сначала нужно разделить строку на части.
-            format, imgstr = data.split(';base64,')
-            # И извлечь расширение файла.
-            ext = format.split('/')[-1]  
-            # Затем декодировать сами данные и поместить результат в файл,
-            # которому дать название по шаблону.
-            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-
-        return super().to_internal_value(data)
+from .utils import Base64ImageField
+from users.serializers import CustomUserSerializer
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -51,15 +36,13 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
-class RecipeSerializer(serializers.ModelSerializer):
+class RecipeRetriveSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
     tags = TagSerializer(
         many=True,
         read_only=True
     )
-    author = serializers.SlugRelatedField(
-        read_only=True, slug_field='username'
-    )
+    author = CustomUserSerializer()
     ingredients = RecipeIngredientSerializer(
         many=True,
         required=True,
@@ -69,7 +52,55 @@ class RecipeSerializer(serializers.ModelSerializer):
         read_only=True)
     is_in_shopping_cart = serializers.BooleanField(
         read_only=True)
+    # SerializerMethodField()
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'tags', 'author', 'ingredients', 'is_favorited', 'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time')
+
+
+class RecipeIngredientCreateUpdateSerializer(RecipeIngredientSerializer):
+    id = serializers.IntegerField()
+    amount = serializers.IntegerField()
+
+    class Meta:
+        model = RecipeIngredient
+        fields = ('id', 'amount')
+
+
+class RecipeCUDSerializer(serializers.ModelSerializer):
+    image = Base64ImageField()
+    ingredients = RecipeIngredientCreateUpdateSerializer(many=True, required=True)
+    tags = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Tag.objects.all())
 
     class Meta:
         model = Recipe
         fields = '__all__'
+        read_only_fields = ('author',)
+
+    def create(self, validated_data):
+        ingredients_data = validated_data.pop('ingredients')  # Извлекаем ингредиенты
+        tags_data = validated_data.pop('tags')
+        recipe = Recipe.objects.create(**validated_data)  # Создаем рецепт
+        print(ingredients_data)
+    # Создаем ингредиенты для рецепта через модель RecipeIngredient
+        for ingredient_data in ingredients_data:
+            ingredient = ingredient_data['id']
+            amount = ingredient_data['amount']
+            RecipeIngredient.objects.create(
+                recipe=recipe,
+                ingredient=get_object_or_404(Ingredient, id=ingredient),
+                amount=amount
+            )
+
+        recipe.tags.set(tags_data)
+        return recipe
+
+    def to_representation(self, instance):
+        return RecipeRetriveSerializer(
+            instance,
+            context={
+                'request': self.context.get('request')
+            }).data

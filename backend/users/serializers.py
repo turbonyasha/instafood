@@ -6,7 +6,7 @@ from djoser.serializers import UserSerializer, UserCreateSerializer
 
 
 from .models import FoodgramUser, Subscription
-from recipes.serializers import Base64ImageField
+from recipes.utils import Base64ImageField
 
 
 class CustomUserSerializer(UserSerializer):

@@ -27,14 +27,14 @@ class RecipeTagInline(admin.TabularInline):
 
 class RecipeAdmin(admin.ModelAdmin):
     """Админка для рецепта."""
-    list_display = ('name', 'author', 'pub_date', 'cooking_time')  # Поля, отображаемые в списке рецептов
+    list_display = ('name', 'author', 'pub_date', 'cooking_time', 'short_link')  # Поля, отображаемые в списке рецептов
     search_fields = ('name', 'author__username')  # Поиск по имени рецепта и имени автора
     list_filter = ('pub_date',)  # Фильтрация по дате публикации
     inlines = [RecipeIngredientInline, RecipeTagInline]  # Добавляем инлайн форму для ингредиентов
 
     fieldsets = (
         (None, {
-            'fields': ('name', 'author', 'image', 'text', 'cooking_time')
+            'fields': ('name', 'author', 'image', 'text', 'cooking_time', 'short_link')
         }),
     )
 

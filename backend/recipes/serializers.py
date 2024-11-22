@@ -98,6 +98,27 @@ class RecipeCUDSerializer(serializers.ModelSerializer):
         recipe.tags.set(tags_data)
         return recipe
 
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.image = validated_data.get('image', instance.image)
+        instance.text = validated_data.get('text', instance.text)
+        instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
+        if 'ingredients' in validated_data:
+            ingredients_data = validated_data.pop('ingredients')
+            for ingredient_data in ingredients_data:
+                ingredient_id = ingredient_data['id']
+                amount = ingredient_data['amount']
+                recipe_ingredient, created = RecipeIngredient.objects.get_or_create(
+                    recipe=instance,
+                    ingredient=get_object_or_404(Ingredient, id=ingredient_id)
+                )
+                recipe_ingredient.amount = amount
+                recipe_ingredient.save()
+        if 'tags' in validated_data:
+            instance.tags.set(validated_data.pop('tags'))
+        instance.save()
+        return instance
+
     def to_representation(self, instance):
         return RecipeRetriveSerializer(
             instance,

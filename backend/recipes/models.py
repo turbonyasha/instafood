@@ -96,6 +96,13 @@ class Recipe(models.Model):
         auto_now_add=True,
         verbose_name='Дата создания'
     )
+    short_link = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True,
+        unique=True,
+        verbose_name='Короткая ссылка'
+    )
 
     class Meta:
         ordering = ('-pub_date',)

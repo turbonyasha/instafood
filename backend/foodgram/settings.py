@@ -141,3 +141,5 @@ DJOSER = {
         'current_user': 'users.serializers.CustomUserSerializer',
     },
 }
+
+PROJECT_URL = 'https://food.gram/'

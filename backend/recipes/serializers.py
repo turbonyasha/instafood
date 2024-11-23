@@ -8,6 +8,14 @@ from .utils import Base64ImageField
 from users.serializers import CustomUserSerializer
 
 
+# class RecipeIsInFavoriteMixin:
+#     def get_is_favorited(self, obj):
+#         user = self.context.get('user')
+#         if user.is_authenticated:
+#             return user.favorites.filter(recipe=obj.recipe).exists()
+#         return False
+
+
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
@@ -48,8 +56,7 @@ class RecipeRetriveSerializer(serializers.ModelSerializer):
         required=True,
         source='recipe_ingredients'
     )
-    is_favorited = serializers.BooleanField(
-        read_only=True)
+    is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.BooleanField(
         read_only=True)
     # SerializerMethodField()
@@ -57,6 +64,12 @@ class RecipeRetriveSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = ('id', 'tags', 'author', 'ingredients', 'is_favorited', 'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time')
+
+    def get_is_favorited(self, obj):
+        user = self.context.get('user')
+        if user.is_authenticated:
+            return user.favorites.filter(recipe=obj.recipe).exists()
+        return False
 
 
 class RecipeIngredientCreateUpdateSerializer(RecipeIngredientSerializer):

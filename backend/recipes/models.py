@@ -103,6 +103,8 @@ class Recipe(models.Model):
         unique=True,
         verbose_name='Короткая ссылка'
     )
+    is_favorited = models.BooleanField(default=False)
+    is_in_shopping_cart = models.BooleanField(default=False)
 
     class Meta:
         ordering = ('-pub_date',)
@@ -166,15 +168,6 @@ class FavoriteRecipes(models.Model):
         auto_now_add=True,
         verbose_name='Дата добавления'
     )
-    # почитать про класс-методы в таких случаях, не забыть про
-    # валидацию в сериализаторах и формах
-    # @classmethod
-    # def add_to_favorites(cls, user, recipe):
-    #     return cls.objects.get_or_create(user=user, recipe=recipe)
-
-    # @classmethod
-    # def remove_from_favorites(cls, user, recipe):
-    #     return cls.objects.filter(user=user, recipe=recipe).delete()
 
     class Meta:
         verbose_name = 'рецепт в избранном'
@@ -182,7 +175,7 @@ class FavoriteRecipes(models.Model):
         unique_together = ('recipe', 'user')
 
     def __str__(self):
-        return f'{self.user} добавил {self.recipe[:20]} в избранное'
+        return f'{self.user} добавил {self.recipe.name[:20]} в избранное'
 
 
 class RecipeTag(models.Model):

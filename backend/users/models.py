@@ -24,6 +24,7 @@ class FoodgramUser(AbstractUser):
         verbose_name='Аватар',
         default='media/'
     )
+    is_subscribed = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'пользователь'
@@ -64,4 +65,4 @@ class Subscription(models.Model):
         unique_together = ('user', 'author')
 
     def __str__(self):
-        return f'{self.user} подписан на {self.following}'
+        return f'{self.user} подписан на {self.author}'

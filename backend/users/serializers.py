@@ -6,7 +6,7 @@ from rest_framework.validators import UniqueTogetherValidator
 from djoser.serializers import UserSerializer, UserCreateSerializer
 
 from .models import FoodgramUser, Subscription
-from recipes.utils import Base64ImageField
+from core.utils import Base64ImageField
 from recipes.models import Recipe
 
 
@@ -64,6 +64,14 @@ class RecipesSubscriptionSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'image', 'cooking_time')
 
 
+class AvatarSerializer(serializers.ModelSerializer):
+    avatar = Base64ImageField()
+
+    class Meta:
+        model = FoodgramUser
+        fields = ('avatar',)
+
+
 class SubscribtionSerializer(UserIsSubscribedMixin, serializers.ModelSerializer):
     id = serializers.IntegerField(
         source='author.id')
@@ -86,12 +94,12 @@ class SubscribtionSerializer(UserIsSubscribedMixin, serializers.ModelSerializer)
         fields = ('email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed', 'recipes', 'recipes_count', 'avatar')
         model = FoodgramUser
 
-    def validate_following(self, value):
-        if self.context['request'].user == value:
-            raise serializers.ValidationError(
-                'Вы не можете подписаться на самого себя.'
-            )
-        return value
+    def validate(self, data):
+        user = self.context['request'].user
+        author = data.get('author')
+        if user == author:
+            raise serializers.ValidationError('Вы не можете подписаться на самого себя.')
+        return data
 
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj.author).count()

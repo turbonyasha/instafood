@@ -7,22 +7,25 @@ class FoodgramUser(AbstractUser):
     """Модель пользователя с дополнительным
     полем аватарки и ролями."""
 
-    ROLES = [
-        ('user', 'Пользователь'),
-        ('admin', 'Администратор')
-    ]
     email = models.EmailField(unique=True)
-    role = models.CharField(
-        max_length=max(len(role) for role, _ in ROLES),
-        choices=ROLES,
-        default='user',
-        verbose_name='Роль'
+    first_name = models.CharField(
+        verbose_name='Имя',
+        blank=False,
+        null=False,
+        max_length=128
+    )
+    last_name = models.CharField(
+        verbose_name='Фамилия',
+        blank=False,
+        null=False,
+        max_length=128
     )
     avatar = models.ImageField(
         blank=True,
         null=True,
         verbose_name='Аватар',
-        default='media/'
+        default='media/',
+        upload_to='static/avatar/'
     )
     is_subscribed = models.BooleanField(default=False)
 
@@ -62,7 +65,12 @@ class Subscription(models.Model):
     class Meta:
         verbose_name = 'подписка'
         verbose_name_plural = 'Подписки'
-        unique_together = ('user', 'author')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'user'],
+                name='unique_author_in_subscriptions'
+            )
+        ]
 
     def __str__(self):
         return f'{self.user} подписан на {self.author}'

@@ -1,7 +1,7 @@
 from rest_framework import serializers, exceptions
 from django.shortcuts import get_object_or_404
 
-from .models import Tag, Recipe, Ingredient, RecipeIngredient
+from .models import Tag, Recipe, Ingredient, RecipeIngredient, FavoriteRecipes, ShoppingCart
 from users.models import FoodgramUser
 
 from core.utils import Base64ImageField
@@ -49,21 +49,29 @@ class RecipeRetriveSerializer(serializers.ModelSerializer):
         required=True,
         source='recipe_ingredients'
     )
+    # is_in_shopping_cart = serializers.BooleanField(read_only=True)
+    # is_favorited = serializers.BooleanField(read_only=True)
     is_favorited = serializers.SerializerMethodField()
-    is_in_shopping_cart = serializers.BooleanField(
-        read_only=True)
-    # SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
         fields = ('id', 'tags', 'author', 'ingredients', 'is_favorited', 'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time')
 
     def get_is_favorited(self, obj):
-        print(obj)
-        recipe = self.context.get('recipe')
-        if recipe:
-            return recipe.favorites.filter(recipe=obj.recipe).exists()
+        # Check if the currently authenticated user has favorited the recipe
+        user = self.context.get('request').user
+        if user.is_authenticated:
+            return FavoriteRecipes.objects.filter(user=user, recipe=obj).exists()  # Check if this recipe is in the user's favorites
         return False
+
+    def get_is_in_shopping_cart(self, obj):
+        # Check if the currently authenticated user has added the recipe to their shopping cart
+        user = self.context.get('request').user
+        if user.is_authenticated:
+            return ShoppingCart.objects.filter(user=user, recipe=obj).exists()  # Check if this recipe is in the user's shopping cart
+        return False
+
 
 
 class RecipeIngredientCreateUpdateSerializer(RecipeIngredientSerializer):

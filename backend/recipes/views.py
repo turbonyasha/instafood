@@ -13,6 +13,8 @@ from rest_framework.permissions import (
 )
 from rest_framework.generics import GenericAPIView
 from rest_framework.exceptions import MethodNotAllowed
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Exists, OuterRef
 
 
 from .models import Recipe, Tag, Ingredient, FavoriteRecipes, RecipeIngredient, ShoppingCart
@@ -20,24 +22,41 @@ from .serializers import TagSerializer, RecipeCUDSerializer, RecipeRetriveSerial
 from users.serializers import RecipesSubscriptionSerializer
 from core.utils import generate_short_link
 from core.permissions import AdminOrSafeMethodPermission, IsAuthorOrAdmin
+from core.filters import RecipesFilterSet
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     http_method_names = ('get', 'post', 'delete', 'patch')
     permission_classes = [IsAuthenticatedOrReadOnly]
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('tags__name', 'author__username') 
+    # filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipesFilterSet
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        tags = self.request.query_params.get('tags', None)
-        author = self.request.query_params.get('author', None)
-        if tags:
-            queryset = queryset.filter(tags__name__in=tags).distinct()
-        if author:
-            queryset = queryset.filter(author__username__icontains=author)
+
+        # Для поля is_in_shopping_cart
+        if self.request.user.is_authenticated:
+            shopping_cart_exists = Exists(
+                ShoppingCart.objects.filter(
+                    recipe=OuterRef('pk'),
+                    user=self.request.user
+                )
+            )
+            queryset = queryset.annotate(is_in_shopping_cart_annotated=shopping_cart_exists)
+
+        # Для поля is_favorited
+        if self.request.user.is_authenticated:
+            favorites_exists = Exists(
+                FavoriteRecipes.objects.filter(
+                    recipe=OuterRef('pk'),
+                    user=self.request.user
+                )
+            )
+            queryset = queryset.annotate(is_favorited_annotated=favorites_exists)
+
         return queryset
+
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)

@@ -12,15 +12,16 @@ from recipes.models import Recipe
 
 class UserIsSubscribedMixin:
     def get_is_subscribed(self, obj):
-        user = self.context.get('user')
+        user = self.context['request'].user
         if user.is_authenticated:
-            return user.subscriptions.filter(author=obj.author).exists()
+            subscriptions = user.subscriptions.all()  # Получаем все подписки
+            return subscriptions.filter(author=FoodgramUser.objects.get(username=obj)).exists()
         return False
 
 
 class CustomUserSerializer(UserIsSubscribedMixin, UserSerializer):
     avatar = Base64ImageField()
-    is_subscribed = serializers.BooleanField()
+    is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = FoodgramUser
@@ -34,8 +35,12 @@ class CustomUserSerializer(UserIsSubscribedMixin, UserSerializer):
             'avatar'
         )
 
-    def get_avatar(self, obj):
-        return obj.get_avatar_url()
+    # def get_avatar(self, obj):
+    #     return obj.get_avatar_url()
+    
+    # def get_is_subscribed(self, obj):
+    #     user = self.context['request'].user
+    #     return user.subscriptions.filter(user=obj).exists()
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
@@ -115,9 +120,3 @@ class SubscribtionSerializer(UserIsSubscribedMixin, serializers.ModelSerializer)
         return RecipesSubscriptionSerializer(
             recipes,
             many=True).data
-
-    def get_is_subscribed(self, obj):
-        user = self.context.get('user')
-        if user.is_authenticated:
-            return user.subscriptions.filter(author=obj.author).exists()
-        return False

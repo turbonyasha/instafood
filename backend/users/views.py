@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.permissions import (
     IsAuthenticated, IsAuthenticatedOrReadOnly, AllowAny, IsAdminUser
 )
+from django.db.models import Exists, OuterRef, Count
 
 from djoser.views import UserViewSet, TokenCreateView
 
@@ -17,51 +18,59 @@ from .serializers import CustomUserSerializer, CustomTokenCreateSerializer, Subs
 from recipes.models import Recipe, FavoriteRecipes, RecipeIngredient
 from core.permissions import AdminOnlyPermission, IsAuthorOrAdmin
 from core.utils import LimitPageNumberPagination
+from core.filters import UserFilterSet
+
+
+from django.db.models import Exists, OuterRef, Count
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 
 class CustomUserViewSet(UserViewSet):
-    queryset = FoodgramUser.objects.all()
+    queryset = FoodgramUser.objects.all().order_by('id')
     serializer_class = CustomUserSerializer
     pagination_class = LimitPageNumberPagination
+    filterset_class = UserFilterSet
 
     def get_permissions(self):
-        if self.action == 'list' or self.action == 'retrieve' or self.action == 'create':
-            permission_classes = [AllowAny]
-        elif self.action == 'avatar' or self.action == 'subscribe' or self.action == 'subscriptions':
-            permission_classes = [IsAuthenticated]
-        else:
-            permission_classes = [IsAuthorOrAdmin]
-        return [permission() for permission in permission_classes]
+        if self.action in ['list', 'retrieve', 'create']:
+            return [AllowAny()]
+        if self.action in ['avatar', 'subscribe', 'subscriptions']:
+            return [IsAuthenticated()]
+        return [IsAuthorOrAdmin()]
 
-    @action(detail=False, methods=['put', 'delete'], url_path='me/avatar')
-    def avatar(self, request):
-        self.permission_classes = [IsAuthenticated]
-        user = self.request.user
+    # def get_queryset(self):
+    #     # Получаем базовый queryset
+    #     queryset = self.queryset
 
-        if request.method == 'PUT':
-            if not request.data:
-                return Response({'detail': 'Запрос не содержит данных.'}, status=status.HTTP_400_BAD_REQUEST)
-            serializer = AvatarSerializer(user, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    #     # Если пользователь анонимный, просто возвращаем весь список
+    #     if self.request.user.is_anonymous:
+    #         return queryset
 
-        elif request.method == 'DELETE':
-            if user.avatar:
-                user.avatar.delete()
-            return Response(request.data, status=status.HTTP_204_NO_CONTENT)
+    #     # Создаем подзапрос, который проверяет, подписан ли текущий пользователь на других пользователей
+    #     subscribe = self.request.user.subscriptions.filter(author=OuterRef('pk'))
+
+    #     # Добавляем аннотацию is_subscribed через подзапрос
+    #     queryset = queryset.annotate(
+    #         is_subscribed_annotated=Exists(subscribe),  # Используем Exists для подзапроса
+    #         recipes_count=Count('recipe')   # Подсчет количества рецептов
+    #     )
+
+    #     return queryset
 
     @action(detail=False, methods=['get'], url_path='subscriptions')
     def subscriptions(self, request, pk=None):
         self.permission_classes = [IsAuthenticated]
         user = self.request.user
-        subscriptions = user.subscriptions.all()
-        page = self.paginate_queryset(subscriptions)
+        # Получаем queryset с подписками
+        queryset = self.get_queryset().filter(is_subscribed=True)
+        
+        page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = SubscribtionSerializer(page, many=True, context={'request': request, 'user': user})
             return self.get_paginated_response(serializer.data)
-        serializer = SubscribtionSerializer(subscriptions, many=True, context={'request': request, 'user': user})
+        
+        # Если пагинация не нужна, возвращаем все подписки
+        serializer = SubscribtionSerializer(queryset, many=True, context={'request': request, 'user': user})
         return Response(serializer.data)
 
     @action(detail=True, methods=['post', 'delete'], url_path='subscribe')
@@ -72,15 +81,21 @@ class CustomUserViewSet(UserViewSet):
             author = FoodgramUser.objects.get(id=id)
         except FoodgramUser.DoesNotExist:
             return Response({'detail': 'Пользователь не найден.'}, status=status.HTTP_404_NOT_FOUND)
+
         if request.method == 'POST':
             if user == author:
                 return Response({'detail': 'Вы не можете подписаться на самого себя.'}, status=status.HTTP_400_BAD_REQUEST)
-            if Subscription.objects.filter(user=user, author=author).exists():
+            
+            # Создание или получение подписки
+            subscription, created = Subscription.objects.get_or_create(user=user, author=author)
+            
+            if not created:
                 return Response({'detail': 'Вы уже подписаны на этого пользователя.'}, status=status.HTTP_400_BAD_REQUEST)
-            subscription = Subscription(user=user, author=author)
-            subscription.save()
+
+            # Сериализация подписки
             serializer = SubscribtionSerializer(subscription, context={'request': request, 'user': user})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
         if request.method == 'DELETE':
             try:
                 subscription = Subscription.objects.get(user=user, author=author)
@@ -88,6 +103,7 @@ class CustomUserViewSet(UserViewSet):
                 return Response(status=status.HTTP_204_NO_CONTENT)
             except Subscription.DoesNotExist:
                 return Response({'detail': 'Подписка не найдена.'}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 @api_view(['POST'])

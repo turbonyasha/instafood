@@ -36,10 +36,10 @@ class FoodgramUser(AbstractUser):
     def __str__(self):
         return self.username
 
-    def get_avatar_url(self):
-        if self.avatar:
-            return self.avatar.url
-        return settings.MEDIA_URL + 'avatars/default-avatar.png'
+    # def get_avatar_url(self):
+    #     if self.avatar:
+    #         return self.avatar.url
+    #     return settings.MEDIA_URL + 'avatars/default-avatar.png'
 
 
 class Subscription(models.Model):
@@ -63,6 +63,7 @@ class Subscription(models.Model):
     )
 
     class Meta:
+        ordering = ('subscribed_at',)
         verbose_name = 'подписка'
         verbose_name_plural = 'Подписки'
         constraints = [

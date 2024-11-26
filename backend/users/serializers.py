@@ -15,7 +15,7 @@ class UserIsSubscribedMixin:
         user = self.context['request'].user
         if user.is_authenticated:
             subscriptions = user.subscriptions.all()  # Получаем все подписки
-            return subscriptions.filter(author=FoodgramUser.objects.get(username=obj)).exists()
+            return subscriptions.filter(author=obj.author).exists()
         return False
 
 
@@ -78,26 +78,19 @@ class AvatarSerializer(serializers.ModelSerializer):
 
 
 class SubscribtionSerializer(UserIsSubscribedMixin, serializers.ModelSerializer):
-    id = serializers.IntegerField(
-        source='author.id')
-    email = serializers.EmailField(
-        source='author.email')
-    username = serializers.CharField(
-        source='author.username')
-    first_name = serializers.CharField(
-        source='author.first_name')
-    last_name = serializers.CharField(
-        source='author.last_name')
+    id = serializers.IntegerField(source='author.id')  # Получаем ID подписанного пользователя
+    email = serializers.EmailField(source='author.email')  # Email подписанного пользователя
+    username = serializers.CharField(source='author.username')  # Имя пользователя
+    first_name = serializers.CharField(source='author.first_name')  # Имя
+    last_name = serializers.CharField(source='author.last_name')  # Фамилия
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
-    avatar = serializers.ImageField(
-        source='author.avatar'
-    )
+    avatar = serializers.ImageField(source='author.avatar')  # Аватар подписанного пользователя
 
     class Meta:
+        model = Subscription  # Используем модель Subscription
         fields = ('email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed', 'recipes', 'recipes_count', 'avatar')
-        model = FoodgramUser
 
     def validate(self, data):
         user = self.context['request'].user

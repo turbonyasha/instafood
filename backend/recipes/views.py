@@ -1,41 +1,53 @@
 from collections import defaultdict
 
-from rest_framework import viewsets, mixins, filters
-from rest_framework.decorators import action
-from django.shortcuts import redirect
-from django.urls import reverse
-from rest_framework import status
-from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect, get_object_or_404
 from django.http import HttpResponse
-from rest_framework.permissions import (
-    IsAuthenticated, IsAuthenticatedOrReadOnly, IsAdminUser
-)
-from rest_framework.generics import GenericAPIView
-from rest_framework.exceptions import MethodNotAllowed
-from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Exists, OuterRef
+from rest_framework import viewsets, filters, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 
 
-from .models import Recipe, Tag, Ingredient, FavoriteRecipes, RecipeIngredient, ShoppingCart
-from .serializers import TagSerializer, RecipeCUDSerializer, RecipeRetriveSerializer, IngredientSerializer
-from users.serializers import RecipesSubscriptionSerializer
+from .models import (
+    Recipe, Tag, Ingredient, FavoriteRecipes,
+    RecipeIngredient, ShoppingCart
+)
+from .serializers import (
+    TagSerializer, RecipeCUDSerializer,
+    RecipeRetriveSerializer, IngredientSerializer
+)
+import core.constants as const
 from core.utils import generate_short_link
-from core.permissions import AdminOrSafeMethodPermission, IsAuthorOrAdmin
+from core.permissions import IsAuthorOrAdmin, AdminOrSafeMethodPermission
 from core.filters import RecipesFilterSet
+from users.serializers import RecipesSubscriptionSerializer
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    http_method_names = ('get', 'post', 'delete', 'patch')
+    http_method_names = const.HTTP_METHOD_NAMES
     permission_classes = [IsAuthenticatedOrReadOnly]
-    # filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipesFilterSet
+
+    # def get_queryset(self):
+    # queryset = super().get_queryset()
+    # if self.request.user.is_authenticated:
+    #     for model_class, annotation_name in [
+    #         (ShoppingCart, 'is_in_shopping_cart'),
+    #         (FavoriteRecipes, 'is_favorited')
+    #     ]:
+    #         is_in_list_exists = Exists(
+    #             model_class.objects.filter(
+    #                 recipe=OuterRef('pk'),
+    #                 user=self.request.user
+    #             )
+    #         )
+    #         queryset = queryset.annotate(**{annotation_name: is_in_list_exists})
+    # return queryset
 
     def get_queryset(self):
         queryset = super().get_queryset()
-
-        # Для поля is_in_shopping_cart
         if self.request.user.is_authenticated:
             shopping_cart_exists = Exists(
                 ShoppingCart.objects.filter(
@@ -44,8 +56,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 )
             )
             queryset = queryset.annotate(is_in_shopping_cart_annotated=shopping_cart_exists)
-
-        # Для поля is_favorited
         if self.request.user.is_authenticated:
             favorites_exists = Exists(
                 FavoriteRecipes.objects.filter(
@@ -54,9 +64,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 )
             )
             queryset = queryset.annotate(is_favorited_annotated=favorites_exists)
-
         return queryset
-
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -86,9 +94,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         else:
             short_link = generate_short_link()
             recipe.short_link = short_link
-            recipe.save()
+        recipe.save()
         return Response({'short-link': short_link}, status=status.HTTP_200_OK)
-    
+
     @action(detail=True, methods=['post', 'delete'], url_path='favorite')
     def favorite(self, request, pk=None):
         user = self.request.user
@@ -133,8 +141,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             except FavoriteRecipes.DoesNotExist:
                 return Response({'detail': 'Рецепт не в вашей корзине.'}, status=status.HTTP_404_NOT_FOUND)
 
-
-    @action(detail=False, methods=['get'], url_path='download_shopping_cart')
+    @action(detail=False, methods=['get'], url_path='download_shopping_cart', permission_classes=[IsAuthenticated])
     def get_and_download_shopping_cart(self, request):
         favorite_recipes = FavoriteRecipes.objects.filter(user=self.request.user).select_related('recipe')
         ingredients_summary = defaultdict(int)
@@ -144,7 +151,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             ingredients = RecipeIngredient.objects.filter(recipe=favorite.recipe)
             for ingredient in ingredients:
                 ingredients_summary[ingredient.ingredient] += ingredient.amount
-        file_header = " ,".join(recipes_names)
+        file_header = ", ".join(recipes_names)
         shopping_list = [f'Список покупок для рецептов: {file_header}']
         for ingredient, amount in ingredients_summary.items():
             shopping_list.append(f"▢ {ingredient.name}: {amount} {ingredient.measurement_unit}")
@@ -156,25 +163,25 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 
 def redirect_to_recipe(request, short_link):
-    return redirect('recipe-detail', pk=get_object_or_404(Recipe, short_link=short_link).pk)
+    return redirect('recipe-detail', pk=get_object_or_404(
+        Recipe, short_link=short_link
+    ).pk)
 
 
-class TagsViewSet(viewsets.ModelViewSet):
+class TagsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
-    permission_classes = [AdminOrSafeMethodPermission]
     serializer_class = TagSerializer
     pagination_class = None
-    http_method_names = ('get',)
-
-
-class IngredientsViewSet(viewsets.ModelViewSet):
-    queryset = Ingredient.objects.all()
     permission_classes = [AdminOrSafeMethodPermission]
+
+
+class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     pagination_class = None
-    http_method_names = ('get',)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+    permission_classes = [AdminOrSafeMethodPermission]
 
     def get_queryset(self):
         queryset = super().get_queryset()

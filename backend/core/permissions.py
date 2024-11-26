@@ -17,36 +17,29 @@ class AdminOnlyPermission(BasePermission):
 
 
 class AdminOrSafeMethodPermission(AdminOnlyPermission):
-    # """
-    # Разрешает доступ всем пользователям для безопасных методов запроса,
-    # в остальных случаях — только администраторам.
-    # """
-    # def has_permission(self, request, view):
-    #     return (
-    #         is_safe_method(request)
-    #         or super().has_permission(request, view)
-    #     )
+    """
+    Операции на чтение разрешены всем, остальные операции
+    только администратору. Во всех остальных случаях -
+    метод не разрешен, ответ от сервера 405.
+    """
+
     def has_permission(self, request, view):
         if request.method == 'GET':
-            return True  # Разрешить доступ всем для GET
+            return True
         elif request.user and request.user.is_authenticated:
-            # Для других методов проверка прав пользователя
-            if request.user.is_staff:  # Здесь проверка на админа
+            if request.user.is_staff:
                 return True
             else:
-                # Для остальных методов не разрешаем доступ
                 raise MethodNotAllowed("Method Not Allowed")
         else:
-            # Если пользователь не аутентифицирован, доступ не разрешен
             return False
 
 
 class IsAuthorOrAdmin(BasePermission):
     """
-    Операции на чтение разрешены всем, остальные - автору текста,
-    администратору или модератору.
+    Операции на чтение разрешены всем, остальные -
+    автору рецепта, администратору.
     """
-
     admin = AdminOnlyPermission()
 
     def has_permission(self, request, view):

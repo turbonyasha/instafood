@@ -1,5 +1,4 @@
 from django.db import models
-from django.core import validators
 
 from users.models import FoodgramUser
 import core.validators as valid
@@ -7,7 +6,6 @@ import core.validators as valid
 
 class Tag(models.Model):
     """Модель метки для рецептов."""
-    # добавить related_name
     name = models.CharField(
         max_length=64,
         verbose_name='Название',
@@ -33,7 +31,6 @@ class Tag(models.Model):
 
 class Ingredient(models.Model):
     """Модель ингридиентов для рецептов."""
-    # добавить related_name
     name = models.CharField(
         max_length=64,
         verbose_name='Название',
@@ -58,7 +55,6 @@ class Ingredient(models.Model):
 
 class Recipe(models.Model):
     """Модель рецептов."""
-    # добавить related_name
     name = models.CharField(
         max_length=256,
         verbose_name='Название',
@@ -101,8 +97,8 @@ class Recipe(models.Model):
         null=False,
         default=1,
         blank=False,
-        validators=(valid.validate_cooking_time,))
-
+        validators=(valid.validate_cooking_time,)
+    )
     pub_date = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Дата создания'
@@ -114,8 +110,14 @@ class Recipe(models.Model):
         unique=True,
         verbose_name='Короткая ссылка'
     )
-    is_favorited = models.BooleanField(default=False)
-    is_in_shopping_cart = models.BooleanField(default=False)
+    is_favorited = models.BooleanField(
+        default=False,
+        verbose_name='В избранном'
+    )
+    is_in_shopping_cart = models.BooleanField(
+        default=False,
+        verbose_name='В списке покупок'
+    )
 
     class Meta:
         ordering = ('-pub_date',)
@@ -132,7 +134,6 @@ class RecipeIngredient(models.Model):
     используемых в рецепте. Содержит поле, определяющее
     количество ингридиентов для рецепта.
     """
-    # добавить related_name
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
@@ -165,9 +166,7 @@ class RecipeIngredient(models.Model):
 
 
 class BaseRecipeUserModel(models.Model):
-    """
-    Базовая модель для связи рецепта с пользователем.
-    """
+    """Базовая модель для связи рецепта с пользователем."""
     user = models.ForeignKey(
         FoodgramUser,
         on_delete=models.CASCADE,
@@ -193,6 +192,7 @@ class FavoriteRecipes(BaseRecipeUserModel):
     Связующая модель для составления
     списка рецептов, добавленных пользователем в избранное.
     """
+
     class Meta(BaseRecipeUserModel.Meta):
         verbose_name = 'рецепт в избранном'
         verbose_name_plural = 'Рецепты в избранном'
@@ -209,6 +209,7 @@ class ShoppingCart(BaseRecipeUserModel):
     Связующая модель для составления
     списка рецептов, добавленных пользователем в корзину покупок.
     """
+
     class Meta(BaseRecipeUserModel.Meta):
         verbose_name = 'рецепт в корзине'
         verbose_name_plural = 'Рецепты в корзине'
@@ -221,7 +222,7 @@ class ShoppingCart(BaseRecipeUserModel):
 
 
 class RecipeTag(models.Model):
-    """Промежуточная модель для связи рецептов и тегов."""
+    """Связующая модель для рецептов и тегов."""
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,

@@ -1,12 +1,13 @@
 from rest_framework import serializers, exceptions
 from django.shortcuts import get_object_or_404
 
-from .models import Tag, Recipe, Ingredient, RecipeIngredient, FavoriteRecipes, ShoppingCart
-from users.models import FoodgramUser
+from .models import (
+    Tag, Recipe, Ingredient, RecipeIngredient,
+    FavoriteRecipes, ShoppingCart
+)
 
 from core.utils import Base64ImageField
 from users.serializers import CustomUserSerializer
-import core.validators as valid
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -49,8 +50,6 @@ class RecipeRetriveSerializer(serializers.ModelSerializer):
         required=True,
         source='recipe_ingredients'
     )
-    # is_in_shopping_cart = serializers.BooleanField(read_only=True)
-    # is_favorited = serializers.BooleanField(read_only=True)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
@@ -59,19 +58,16 @@ class RecipeRetriveSerializer(serializers.ModelSerializer):
         fields = ('id', 'tags', 'author', 'ingredients', 'is_favorited', 'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time')
 
     def get_is_favorited(self, obj):
-        # Check if the currently authenticated user has favorited the recipe
         user = self.context.get('request').user
         if user.is_authenticated:
-            return FavoriteRecipes.objects.filter(user=user, recipe=obj).exists()  # Check if this recipe is in the user's favorites
+            return FavoriteRecipes.objects.filter(user=user, recipe=obj).exists()
         return False
 
     def get_is_in_shopping_cart(self, obj):
-        # Check if the currently authenticated user has added the recipe to their shopping cart
         user = self.context.get('request').user
         if user.is_authenticated:
-            return ShoppingCart.objects.filter(user=user, recipe=obj).exists()  # Check if this recipe is in the user's shopping cart
+            return ShoppingCart.objects.filter(user=user, recipe=obj).exists()
         return False
-
 
 
 class RecipeIngredientCreateUpdateSerializer(RecipeIngredientSerializer):
@@ -108,7 +104,7 @@ class RecipeCUDSerializer(serializers.ModelSerializer):
             ingredients_ids.append(ingredient['id'])
             if not Ingredient.objects.filter(id=ingredient['id']).exists():
                 raise serializers.ValidationError(
-                    f'Ингридиента c ID {id} не существует!'
+                    f'Ингридиента {ingredient} не существует!'
                 )
             if ingredient['amount'] < 1:
                 raise serializers.ValidationError(
@@ -119,11 +115,9 @@ class RecipeCUDSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        ingredients_data = validated_data.pop('ingredients')  # Извлекаем ингредиенты
+        ingredients_data = validated_data.pop('ingredients')
         tags_data = validated_data.pop('tags')
-        recipe = Recipe.objects.create(**validated_data)  # Создаем рецепт
-        print(ingredients_data)
-    # Создаем ингредиенты для рецепта через модель RecipeIngredient
+        recipe = Recipe.objects.create(**validated_data)
         for ingredient_data in ingredients_data:
             ingredient = ingredient_data['id']
             amount = ingredient_data['amount']
@@ -132,7 +126,6 @@ class RecipeCUDSerializer(serializers.ModelSerializer):
                 ingredient=get_object_or_404(Ingredient, id=ingredient),
                 amount=amount
             )
-
         recipe.tags.set(tags_data)
         return recipe
 
@@ -151,9 +144,10 @@ class RecipeCUDSerializer(serializers.ModelSerializer):
                 amount = ingredient_data['amount']
                 recipe_ingredient, created = RecipeIngredient.objects.get_or_create(
                     recipe=instance,
-                    ingredient=get_object_or_404(Ingredient, id=ingredient_id)
+                    ingredient=get_object_or_404(Ingredient, id=ingredient_id),
+                    amount=amount
                 )
-                recipe_ingredient.amount = amount
+                # recipe_ingredient.amount = amount
                 recipe_ingredient.save()
         if 'tags' in validated_data:
             instance.tags.set(validated_data.pop('tags'))
@@ -166,3 +160,55 @@ class RecipeCUDSerializer(serializers.ModelSerializer):
             context={
                 'request': self.context.get('request')
             }).data
+
+
+# def create(self, validated_data):
+#         ingredients_data = validated_data.pop('ingredients')
+#         tags_data = validated_data.pop('tags')
+
+#         # Создаем рецепт
+#         recipe = Recipe.objects.create(**validated_data)
+
+#         # Работа с ингредиентами
+#         self._create_or_update_ingredients(recipe, ingredients_data)
+
+#         # Работа с тегами
+#         recipe.tags.set(tags_data)
+
+#         return recipe
+
+#     def update(self, instance, validated_data):
+#         if self.context['request'].user != instance.author:
+#             raise exceptions.PermissionDenied('Вы не можете редактировать этот рецепт.')
+
+#         # Проверка и валидация
+#         self.validate(validated_data)
+
+#         # Обновление полей
+#         instance.name = validated_data.get('name', instance.name)
+#         instance.image = validated_data.get('image', instance.image)
+#         instance.text = validated_data.get('text', instance.text)
+#         instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
+
+#         # Работа с ингредиентами
+#         if 'ingredients' in validated_data:
+#             ingredients_data = validated_data.pop('ingredients')
+#             self._create_or_update_ingredients(instance, ingredients_data)
+
+#         # Работа с тегами
+#         if 'tags' in validated_data:
+#             instance.tags.set(validated_data.pop('tags'))
+
+#         instance.save()
+#         return instance
+
+#     def _create_or_update_ingredients(self, recipe, ingredients_data):
+#         """Метод для создания или обновления ингредиентов в рецепте"""
+#         for ingredient_data in ingredients_data:
+#             ingredient = get_object_or_404(Ingredient, id=ingredient_data['id'])
+#             recipe_ingredient, created = RecipeIngredient.objects.get_or_create(
+#                 recipe=recipe,
+#                 ingredient=ingredient
+#             )
+#             recipe_ingredient.amount = ingredient_data['amount']
+#             recipe_ingredient.save()

@@ -73,7 +73,6 @@ class Recipe(models.Model):
         verbose_name='Картинка',
         null=False,
         upload_to='static/recipe/',
-        default='media/',
     )
     text = models.TextField(
         verbose_name='Текст',

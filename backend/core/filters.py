@@ -62,9 +62,10 @@ class UserFilterSet(filters.FilterSet):
 
 class TagFilter(admin.SimpleListFilter):
     """Расширенный фильтр для админки для поиска по тегам."""
+
     title = 'Метка'
     parameter_name = 'tag'
-    
+
     def lookups(self, request, model_admin):
         tags = Tag.objects.all()
         return [(tag.id, tag.name) for tag in tags]

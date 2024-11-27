@@ -24,7 +24,6 @@ class FoodgramUser(AbstractUser):
         blank=True,
         null=True,
         verbose_name='Аватар',
-        default='media/',
         upload_to='static/avatar/'
     )
     is_subscribed = models.BooleanField(default=False)

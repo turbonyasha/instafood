@@ -6,7 +6,9 @@ from django.db.models import Exists, OuterRef
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import (
+    IsAuthenticatedOrReadOnly, IsAuthenticated
+)
 
 
 from .models import (
@@ -30,40 +32,20 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
     filterset_class = RecipesFilterSet
 
-    # def get_queryset(self):
-    # queryset = super().get_queryset()
-    # if self.request.user.is_authenticated:
-    #     for model_class, annotation_name in [
-    #         (ShoppingCart, 'is_in_shopping_cart'),
-    #         (FavoriteRecipes, 'is_favorited')
-    #     ]:
-    #         is_in_list_exists = Exists(
-    #             model_class.objects.filter(
-    #                 recipe=OuterRef('pk'),
-    #                 user=self.request.user
-    #             )
-    #         )
-    #         queryset = queryset.annotate(**{annotation_name: is_in_list_exists})
-    # return queryset
-
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.request.user.is_authenticated:
-            shopping_cart_exists = Exists(
-                ShoppingCart.objects.filter(
-                    recipe=OuterRef('pk'),
-                    user=self.request.user
+            for model_class, annotation_name in [
+                (ShoppingCart, 'is_in_shopping_cart_annotated'),
+                (FavoriteRecipes, 'is_favorited_annotated')
+            ]:
+                is_in_list_exists = Exists(
+                    model_class.objects.filter(
+                        recipe=OuterRef('pk'),
+                        user=self.request.user
+                    )
                 )
-            )
-            queryset = queryset.annotate(is_in_shopping_cart_annotated=shopping_cart_exists)
-        if self.request.user.is_authenticated:
-            favorites_exists = Exists(
-                FavoriteRecipes.objects.filter(
-                    recipe=OuterRef('pk'),
-                    user=self.request.user
-                )
-            )
-            queryset = queryset.annotate(is_favorited_annotated=favorites_exists)
+                queryset = queryset.annotate(**{annotation_name: is_in_list_exists})
         return queryset
 
     def perform_create(self, serializer):
@@ -100,6 +82,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post', 'delete'], url_path='favorite')
     def favorite(self, request, pk=None):
         user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'detail': 'Пожалуйста, войдите в свою учетную запись или зарегистрируйтесь.'}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         try:
             recipe = Recipe.objects.get(pk=pk)
         except Recipe.DoesNotExist:
@@ -122,6 +109,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post', 'delete'], url_path='shopping_cart')
     def shopping_cart(self, request, pk=None):
         user = self.request.user
+        if not user.is_authenticated:
+            return Response(
+                {'detail': 'Пожалуйста, войдите в свою учетную запись или зарегистрируйтесь.'}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         try:
             recipe = Recipe.objects.get(pk=pk)
         except Recipe.DoesNotExist:

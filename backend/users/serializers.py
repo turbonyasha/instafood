@@ -14,8 +14,10 @@ class UserIsSubscribedMixin:
     def get_is_subscribed(self, obj):
         user = self.context['request'].user
         if user.is_authenticated:
-            subscriptions = user.subscriptions.all()  # Получаем все подписки
-            return subscriptions.filter(author=obj.author).exists()
+            if isinstance(obj, FoodgramUser):
+                return Subscription.objects.filter(user=user, author=obj).exists()
+            elif isinstance(obj, Subscription):
+                return Subscription.objects.filter(user=user, author=obj.author).exists()
         return False
 
 

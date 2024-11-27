@@ -126,15 +126,9 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     serializer_class = SubscribtionSerializer
     permission_classes = [IsAuthenticated]
 
-    # def list(self, request):
-    #     user = self.request.user
-    #     subscriptions = Subscription.objects.filter(user=user)
-    #     serializer = SubscribtionSerializer(subscriptions, many=True, context={'request': request})
-    #     return Response(serializer.data)
 
     def get_queryset(self):
         user = self.request.user
-        print(user)
         # Возвращаем все подписки пользователя
         return Subscription.objects.filter(user=user)
 
@@ -178,19 +172,19 @@ def get_user_token(request):
     )
 
 
-class SubscriptionViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    viewsets.GenericViewSet
-):
-    """Возвращает список подписок пользователя."""
-    serializer_class = SubscribtionSerializer
-    permission_classes = [IsAuthenticated]
-    # filter_backends = (filters.SearchFilter,)
-    # search_fields = ('following__username',)
+# class SubscriptionViewSet(
+#     mixins.CreateModelMixin,
+#     mixins.ListModelMixin,
+#     viewsets.GenericViewSet
+# ):
+#     """Возвращает список подписок пользователя."""
+#     serializer_class = SubscribtionSerializer
+#     permission_classes = [IsAuthenticated]
+#     # filter_backends = (filters.SearchFilter,)
+#     # search_fields = ('following__username',)
 
-    def get_queryset(self):
-        return self.request.user.subscriptions.all()
+#     def get_queryset(self):
+#         return self.request.user.subscriptions.all()
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+#     def perform_create(self, serializer):
+#         serializer.save(user=self.request.user)

@@ -93,7 +93,7 @@ class Recipe(models.Model):
         blank=False,
     )
     cooking_time = models.PositiveIntegerField(
-        verbose_name='Время приготовления (в минутах)',
+        verbose_name='Время готовки (мин.)',
         null=False,
         default=1,
         blank=False,
@@ -125,7 +125,7 @@ class Recipe(models.Model):
         verbose_name_plural = 'Рецепты'
 
     def __str__(self):
-        return self.name[:30]
+        return f'{self.name[:30]}, автор {self.author}'
 
 
 class RecipeIngredient(models.Model):

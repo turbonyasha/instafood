@@ -1,6 +1,7 @@
 from django_filters import rest_framework as filters
+from django.contrib import admin
 
-from recipes.models import Recipe
+from recipes.models import Recipe, Tag
 from users.models import FoodgramUser
 
 
@@ -56,4 +57,19 @@ class UserFilterSet(filters.FilterSet):
             if value:
                 return queryset.filter(subscribers__user=user)
             return queryset.exclude(subscribers__user=user)
+        return queryset
+
+
+class TagFilter(admin.SimpleListFilter):
+    """Расширенный фильтр для админки для поиска по тегам."""
+    title = 'Метка'
+    parameter_name = 'tag'
+    
+    def lookups(self, request, model_admin):
+        tags = Tag.objects.all()
+        return [(tag.id, tag.name) for tag in tags]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(recipe__tags__id=self.value())
         return queryset

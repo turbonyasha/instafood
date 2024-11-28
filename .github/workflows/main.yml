@@ -64,6 +64,7 @@ jobs:
       - name: Run frontend tests
         run: |
           cd frontend
+          npm update
           npm test
           
   build_and_push:

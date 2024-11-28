@@ -107,7 +107,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SERVER_SSH_PASSPHRASE }}
           script: |
-            cd kittygram
+            cd foodgram
             sudo echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" > .env
             sudo echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
             sudo echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env

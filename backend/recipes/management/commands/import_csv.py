@@ -1,20 +1,17 @@
 import csv
-import os
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import models
-from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
 
 from recipes.models import Ingredient
 
 HELP = 'Импорт данных из CSV-файлов для учебного проекта API_YamDB.'
-ROW_SUCCESS = 'Запись {row} в {model} залита.'
-MANY_TO_MANY_SUCCESS = ('Связь между произведением "{title}" '
-                        'и жанром "{genre}" загружена.')
-MODEL_SUCCESS = 'Данные модели {model} загружены.'
-FILE_NOT_FOUND = 'Файл {path} для модели {model} не найден.'
+ROW_ERROR = (
+    "Неправильное количество столбцов в CSV файле."
+    "Ожидаются два столбца: 'name' и 'measurement_unit'."
+)
+
 
 class Command(BaseCommand):
     help = HELP
@@ -42,7 +39,7 @@ class Command(BaseCommand):
                 headers = [header.strip() for header in headers]
                 print(f"Headers: {headers}")
                 if len(headers) != 2:
-                    self.stdout.write(self.style.ERROR("Неправильное количество столбцов в CSV файле. Ожидаются два столбца: 'name' и 'measurement_unit'."))
+                    self.stdout.write(self.style.ERROR(ROW_ERROR))
                     return
                 for row in reader:
                     data = {
@@ -55,8 +52,10 @@ class Command(BaseCommand):
                         defaults=data
                     )
                     if created:
-                        self.stdout.write(self.style.SUCCESS(f"Создан новый ингредиент: {data['name']}"))
+                        self.stdout.write(self.style.SUCCESS(
+                            f"Создан новый ингредиент: {data['name']}"))
                     else:
-                        self.stdout.write(self.style.SUCCESS(f"Ингредиент уже существует: {data['name']}"))
+                        self.stdout.write(self.style.SUCCESS(
+                            f"Ингредиент уже существует: {data['name']}"))
         except FileNotFoundError:
             self.stdout.write(self.style.ERROR(f"Файл {path} не найден."))

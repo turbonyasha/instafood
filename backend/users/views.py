@@ -139,7 +139,9 @@ def get_user_token(request):
     serializer = CustomTokenCreateSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     try:
-        user = FoodgramUser.objects.get(email=serializer.validated_data['email'])
+        user = FoodgramUser.objects.get(
+            email=serializer.validated_data['email']
+        )
     except FoodgramUser.DoesNotExist:
         raise ValidationError(const.AUTH_FAIL_TEXT)
     if not user.check_password(serializer.validated_data['password']):

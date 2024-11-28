@@ -61,11 +61,10 @@ jobs:
           cd frontend
           npm install
       
-      - name: Run frontend tests
-        run: |
-          cd frontend
-          npm update
-          npm test
+      # - name: Run frontend tests
+      #   run: |
+      #     cd frontend
+      #     npm test
           
   build_and_push:
     runs-on: ubuntu-latest

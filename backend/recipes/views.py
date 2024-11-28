@@ -1,30 +1,23 @@
 from collections import defaultdict
 
-from django.shortcuts import redirect, get_object_or_404
-from django.http import HttpResponse
 from django.db.models import Exists, OuterRef
-from rest_framework import viewsets, filters, status
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
-from rest_framework.permissions import (
-    IsAuthenticatedOrReadOnly, IsAuthenticated
-)
 
-from .models import (
-    Recipe, Tag, Ingredient, FavoriteRecipes,
-    RecipeIngredient, ShoppingCart
-)
-from .serializers import (
-    TagSerializer, RecipeCUDSerializer,
-    RecipeRetriveSerializer, IngredientSerializer
-)
 import core.constants as const
-from core.utils import generate_short_link, favorite_or_shopping_cart_action
-from core.permissions import (
-    IsAuthorOrAdmin, AdminOrSafeMethodPermission,
-    AdminOrSafeMethodPermission
-)
 from core.filters import RecipesFilterSet
+from core.permissions import AdminOrSafeMethodPermission, IsAuthorOrAdmin
+from core.utils import favorite_or_shopping_cart_action, generate_short_link
+
+from .models import (FavoriteRecipes, Ingredient, Recipe, RecipeIngredient,
+                     ShoppingCart, Tag)
+from .serializers import (IngredientSerializer, RecipeCUDSerializer,
+                          RecipeRetriveSerializer, TagSerializer)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):

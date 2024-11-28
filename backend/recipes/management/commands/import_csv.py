@@ -1,14 +1,13 @@
 import csv
+import os
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import models
-from django.shortcuts import get_object_or_404
 from django.db.utils import IntegrityError
+from django.shortcuts import get_object_or_404
 
 from recipes.models import Ingredient
-
-import os
-from django.conf import settings
 
 HELP = 'Импорт данных из CSV-файлов для учебного проекта API_YamDB.'
 ROW_SUCCESS = 'Запись {row} в {model} залита.'

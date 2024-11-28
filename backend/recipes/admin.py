@@ -1,10 +1,9 @@
 from django.contrib import admin
 
-from .models import (
-    Tag, Ingredient, Recipe, RecipeIngredient,
-    FavoriteRecipes, RecipeTag, ShoppingCart
-)
 import core.constants as const
+
+from .models import (FavoriteRecipes, Ingredient, Recipe, RecipeIngredient,
+                     RecipeTag, ShoppingCart, Tag)
 
 
 class RecipeIngredientInline(admin.TabularInline):

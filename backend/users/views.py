@@ -1,22 +1,20 @@
-from rest_framework.decorators import action
-from rest_framework import status, permissions, viewsets, serializers
-from rest_framework.response import Response
-from rest_framework.authtoken.models import Token
-from rest_framework.exceptions import ValidationError
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.db.models import Exists, OuterRef, Count
+from django.db.models import Count, Exists, OuterRef
 from djoser.views import UserViewSet
+from rest_framework import permissions, serializers, status, viewsets
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+
+import core.constants as const
+from core.filters import UserFilterSet
+from core.paginations import LimitPageNumberPagination
+from core.permissions import IsAuthorOrAdmin
 
 from .models import FoodgramUser, Subscription
-from .serializers import (
-    CustomUserSerializer, CustomTokenCreateSerializer,
-    SubscribtionSerializer
-)
-from core.permissions import IsAuthorOrAdmin
-from core.paginations import LimitPageNumberPagination
-from core.filters import UserFilterSet
-import core.constants as const
+from .serializers import (CustomTokenCreateSerializer, CustomUserSerializer,
+                          SubscribtionSerializer)
 
 
 class CustomUserViewSet(UserViewSet):

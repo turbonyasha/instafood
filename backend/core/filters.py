@@ -1,5 +1,5 @@
-from django_filters import rest_framework as filters
 from django.contrib import admin
+from django_filters import rest_framework as filters
 
 from recipes.models import Recipe, Tag
 from users.models import FoodgramUser

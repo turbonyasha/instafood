@@ -1,10 +1,11 @@
+from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
-from djoser.serializers import UserSerializer, UserCreateSerializer
 
-from .models import FoodgramUser, Subscription
+import core.constants as const
 from core.models import Base64ImageField
 from recipes.models import Recipe
-import core.constants as const
+
+from .models import FoodgramUser, Subscription
 
 
 class UserIsSubscribedMixin:

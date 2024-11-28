@@ -1,7 +1,7 @@
 from django.db import models
 
-from users.models import FoodgramUser
 import core.validators as valid
+from users.models import FoodgramUser
 
 
 class Tag(models.Model):

@@ -1,7 +1,7 @@
 import random
 
-from rest_framework import status
 from django.conf import settings
+from rest_framework import status
 from rest_framework.response import Response
 
 import core.constants as const

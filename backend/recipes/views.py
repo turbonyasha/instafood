@@ -20,7 +20,10 @@ from .serializers import (
 )
 import core.constants as const
 from core.utils import generate_short_link, favorite_or_shopping_cart_action
-from core.permissions import IsAuthorOrAdmin, AdminOrSafeMethodPermission
+from core.permissions import (
+    IsAuthorOrAdmin, AdminOrSafeMethodPermission,
+    AdminOrSafeMethodPermission
+)
 from core.filters import RecipesFilterSet
 
 
@@ -28,7 +31,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     """Представление для рецептов."""
     queryset = Recipe.objects.all()
     http_method_names = const.HTTP_METHOD_NAMES
-    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrAdmin]
+    permission_classes = [AdminOrSafeMethodPermission]
     filterset_class = RecipesFilterSet
 
     def get_queryset(self):

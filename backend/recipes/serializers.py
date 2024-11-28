@@ -132,12 +132,13 @@ class RecipeCUDSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         tags_data = validated_data.pop('tags')
+        ingredients_data = validated_data.pop('ingredients')
         recipe = Recipe.objects.create(**validated_data)
-        recipe.clean()
         self._create_or_update_ingredients(
-            recipe, validated_data.pop('ingredients')
+            recipe=recipe, ingredients_data=ingredients_data
         )
         recipe.tags.set(tags_data)
+        recipe.clean()
         return recipe
 
     def update(self, instance, validated_data):

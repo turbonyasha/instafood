@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
 from users.models import FoodgramUser
 import core.validators as valid
@@ -126,6 +127,32 @@ class Recipe(models.Model):
     def __str__(self):
         return f'{self.name[:30]}, автор {self.author}'
 
+    def clean(self):
+        for field, field_name in [
+            (self.ingredients.exists(), 'Ингредиенты'),
+            (self.tags.exists(), 'Теги'),
+            (self.image, 'Картинка'),
+            (self.cooking_time and self.cooking_time > 0, 'Время готовки'),
+        ]:
+            if not field:
+                raise ValidationError(
+                    f'Поле {field_name} не может быть пустым или некорректным.'
+                )
+        for ingredient in self.ingredients.all():
+            if not Ingredient.objects.filter(id=ingredient.id).exists():
+                raise ValidationError(
+                    f'Ингредиент с id {ingredient.id} не существует!'
+                )
+        tag_ids = [tag.id for tag in self.tags.all()]
+        ingredient_ids = [ingredient.id for ingredient in self.ingredients.all()]
+        for ids, ids_name in [
+            (tag_ids, 'Теги'),
+            (ingredient_ids, 'Ингридиенты')
+        ]:
+            if len(ids) != len(set(ids)):
+                raise ValidationError(f'{ids_name} не могут повторяться.')
+        return super().clean()
+
 
 class RecipeIngredient(models.Model):
     """
@@ -162,6 +189,16 @@ class RecipeIngredient(models.Model):
     def __str__(self):
         return (f'{self.amount}{self.ingredient.measurement_unit}'
                 f'{self.ingredient} в {self.recipe.name[:20]}')
+
+    def clean(self):
+        if self.amount < 1:
+            raise ValidationError(
+                f'Количество ингредиента {self.ingredient.name} не может быть меньше 1.'
+            )
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
 
 class BaseRecipeUserModel(models.Model):

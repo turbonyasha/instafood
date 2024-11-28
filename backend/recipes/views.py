@@ -29,7 +29,7 @@ from users.serializers import RecipesSubscriptionSerializer
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     http_method_names = const.HTTP_METHOD_NAMES
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrAdmin]
     filterset_class = RecipesFilterSet
 
     def get_queryset(self):

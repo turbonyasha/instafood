@@ -13,11 +13,12 @@ router.register(r'recipes', RecipeViewSet, basename='recipes')
 router.register(r'tags', TagsViewSet, basename='tags')
 router.register(r'users', CustomUserViewSet, basename='user')
 router.register(r'ingredients', IngredientsViewSet, basename='ingredients')
-# router.register(r'users/subscriptions', SubscriptionViewSet, basename='subscriptions')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/users/subscriptions/', SubscriptionViewSet.as_view({'get': 'list'}), name='subscriptions-list'),
+    path('api/users/subscriptions/', SubscriptionViewSet.as_view(
+        {'get': 'list'}
+    ), name='subscriptions-list'),
     path('api/', include(router.urls)),
     path('api/auth/token/login/', get_user_token, name='token-login'),
     path('api/', include('djoser.urls')),

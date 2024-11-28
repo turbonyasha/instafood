@@ -25,4 +25,3 @@ def validate_cooking_time(cooking_time):
             f'Минимальное время приготовления'
             f'1 минута, указано {cooking_time}.'
         )
-    

@@ -13,7 +13,7 @@ services:
     image: turbonyasha/foodgram_backend
     env_file: .env
     volumes:
-      - media:/media
+      - static:/backend_static
     depends_on:
       - db
   frontend:

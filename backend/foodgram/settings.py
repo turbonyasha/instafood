@@ -118,7 +118,7 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
 
-    'DEFAULT_PAGINATION_CLASS': 'core.utils.LimitPageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': 'core.paginations.LimitPageNumberPagination',
     'PAGE_SIZE': 10,
 }
 
@@ -131,4 +131,4 @@ DJOSER = {
     },
 }
 
-PROJECT_URL = 'https://food.gram/'
+PROJECT_URL = 'https://foodgram.myddns.me'

@@ -1,5 +1,4 @@
 from django.db import models
-from django.core.exceptions import ValidationError
 
 from users.models import FoodgramUser
 import core.validators as valid
@@ -128,29 +127,7 @@ class Recipe(models.Model):
         return f'{self.name[:30]}, автор {self.author}'
 
     def clean(self):
-        for field, field_name in [
-            (self.ingredients.exists(), 'Ингредиенты'),
-            (self.tags.exists(), 'Теги'),
-            (self.image, 'Картинка'),
-            (self.cooking_time and self.cooking_time > 0, 'Время готовки'),
-        ]:
-            if not field:
-                raise ValidationError(
-                    f'Поле {field_name} не может быть пустым или некорректным.'
-                )
-        for ingredient in self.ingredients.all():
-            if not Ingredient.objects.filter(id=ingredient.id).exists():
-                raise ValidationError(
-                    f'Ингредиент с id {ingredient.id} не существует!'
-                )
-        tag_ids = [tag.id for tag in self.tags.all()]
-        ingredient_ids = [ingredient.id for ingredient in self.ingredients.all()]
-        for ids, ids_name in [
-            (tag_ids, 'Теги'),
-            (ingredient_ids, 'Ингридиенты')
-        ]:
-            if len(ids) != len(set(ids)):
-                raise ValidationError(f'{ids_name} не могут повторяться.')
+        valid.validate_tag_ingredients(self, model=Ingredient)
         return super().clean()
 
 
@@ -186,15 +163,18 @@ class RecipeIngredient(models.Model):
             )
         ]
 
+    @classmethod
+    def update_or_create_recipeingredient(cls, recipe, ingredient, amount):
+        obj, created = cls.objects.update_or_create(
+            recipe=recipe,
+            ingredient=ingredient,
+            defaults={'amount': amount}
+        )
+        return obj, created
+
     def __str__(self):
         return (f'{self.amount}{self.ingredient.measurement_unit}'
                 f'{self.ingredient} в {self.recipe.name[:20]}')
-
-    def clean(self):
-        if self.amount < 1:
-            raise ValidationError(
-                f'Количество ингредиента {self.ingredient.name} не может быть меньше 1.'
-            )
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -228,7 +208,6 @@ class FavoriteRecipes(BaseRecipeUserModel):
     Связующая модель для составления
     списка рецептов, добавленных пользователем в избранное.
     """
-
     class Meta(BaseRecipeUserModel.Meta):
         verbose_name = 'рецепт в избранном'
         verbose_name_plural = 'Рецепты в избранном'
@@ -245,7 +224,6 @@ class ShoppingCart(BaseRecipeUserModel):
     Связующая модель для составления
     списка рецептов, добавленных пользователем в корзину покупок.
     """
-
     class Meta(BaseRecipeUserModel.Meta):
         verbose_name = 'рецепт в корзине'
         verbose_name_plural = 'Рецепты в корзине'

@@ -1,4 +1,4 @@
-from rest_framework import serializers, exceptions
+from rest_framework import serializers
 from django.shortcuts import get_object_or_404
 
 from .models import (
@@ -6,23 +6,27 @@ from .models import (
     FavoriteRecipes, ShoppingCart
 )
 
-from core.utils import Base64ImageField
+from core.models import Base64ImageField
+import core.constants as const
 from users.serializers import CustomUserSerializer
 
 
 class TagSerializer(serializers.ModelSerializer):
+    """Сериализатор тегов."""
     class Meta:
         model = Tag
         fields = '__all__'
 
 
 class IngredientSerializer(serializers.ModelSerializer):
+    """Сериализатор ингридиентов."""
     class Meta:
         model = Ingredient
         fields = '__all__'
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
+    """Сериализатор для чтения связи рецепта и ингридиента."""
     id = serializers.ReadOnlyField(
         source='ingredient.id'
     )
@@ -39,6 +43,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeRetriveSerializer(serializers.ModelSerializer):
+    """Сериализатор для чтения рецептов."""
     image = Base64ImageField()
     tags = TagSerializer(
         many=True,
@@ -79,6 +84,7 @@ class RecipeRetriveSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientCreateUpdateSerializer(RecipeIngredientSerializer):
+    """Сериализатор для создания и обновления связи рецепта и ингридиента."""
     id = serializers.IntegerField()
     amount = serializers.IntegerField()
 
@@ -86,8 +92,18 @@ class RecipeIngredientCreateUpdateSerializer(RecipeIngredientSerializer):
         model = RecipeIngredient
         fields = ('id', 'amount')
 
+    def validate_amount(self, value):
+        if value < 1:
+            raise serializers.ValidationError(
+                const.VALID_INGREDIENT.format(
+                    amount=value
+                )
+            )
+        return value
+
 
 class RecipeCUDSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания, удаления, редактирования рецептов."""
     image = Base64ImageField(required=False, allow_null=True)
     ingredients = RecipeIngredientCreateUpdateSerializer(
         many=True, required=True
@@ -101,48 +117,30 @@ class RecipeCUDSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('author',)
 
-    # def validate(self, data):
-    #     ingredients_ids = []
-    #     tag_ids = [tag.id for tag in data.get('tags', [])]
-    #     if len(tag_ids) != len(set(tag_ids)):
-    #         raise serializers.ValidationError('Теги не могут повторяться.')
-    #     ingredients = data.get('ingredients', [])
-    #     for field in [ingredients, tag_ids, data.get('image'), data.get('cooking_time')]:
-    #         if not field:
-    #             raise serializers.ValidationError('Поле {field} не может быть пустым.')
-    #     for ingredient in ingredients:
-    #         ingredients_ids.append(ingredient['id'])
-    #         if not Ingredient.objects.filter(id=ingredient['id']).exists():
-    #             raise serializers.ValidationError(
-    #                 f'Ингридиента {ingredient} не существует!'
-    #             )
-    #         if ingredient['amount'] < 1:
-    #             raise serializers.ValidationError(
-    #                 f'Количество ингридиента {ingredient} не может быть меньше 0, указано.'
-    #             )
-    #     if len(ingredients_ids) != len(set(ingredients_ids)):
-    #         raise serializers.ValidationError('Ингридиенты не могут повторяться.')
-    #     return data
+    def _create_or_update_ingredients(self, recipe, ingredients_data):
+        for ingredient_data in ingredients_data:
+            ingredient = get_object_or_404(
+                Ingredient, id=ingredient_data['id']
+            )
+            recipe_ingredient, created = (
+                RecipeIngredient.update_or_create_recipeingredient(
+                    recipe=recipe,
+                    ingredient=ingredient,
+                    amount=ingredient_data['amount']
+                ))
+            recipe_ingredient.save()
 
     def create(self, validated_data):
-        ingredients_data = validated_data.pop('ingredients')
         tags_data = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
         recipe.clean()
-        for ingredient_data in ingredients_data:
-            ingredient = ingredient_data['id']
-            amount = ingredient_data['amount']
-            RecipeIngredient.objects.create(
-                recipe=recipe,
-                ingredient=get_object_or_404(Ingredient, id=ingredient),
-                amount=amount
-            )
+        self._create_or_update_ingredients(
+            recipe, validated_data.pop('ingredients')
+        )
         recipe.tags.set(tags_data)
         return recipe
 
     def update(self, instance, validated_data):
-        # if self.context['request'].user != instance.author:
-        #     raise exceptions.PermissionDenied('Вы не можете редактировать этот рецепт.')
         self.validate(validated_data)
         instance.name = validated_data.get('name', instance.name)
         instance.image = validated_data.get('image', instance.image)
@@ -152,15 +150,7 @@ class RecipeCUDSerializer(serializers.ModelSerializer):
         )
         if 'ingredients' in validated_data:
             ingredients_data = validated_data.pop('ingredients')
-            for ingredient_data in ingredients_data:
-                ingredient_id = ingredient_data['id']
-                amount = ingredient_data['amount']
-                recipe_ingredient, created = RecipeIngredient.objects.get_or_create(
-                    recipe=instance,
-                    ingredient=get_object_or_404(Ingredient, id=ingredient_id),
-                    amount=amount
-                )
-                recipe_ingredient.save()
+            self._create_or_update_ingredients(instance, ingredients_data)
         if 'tags' in validated_data:
             instance.tags.set(validated_data.pop('tags'))
         instance.clean()
@@ -173,55 +163,3 @@ class RecipeCUDSerializer(serializers.ModelSerializer):
             context={
                 'request': self.context.get('request')
             }).data
-
-
-# def create(self, validated_data):
-#         ingredients_data = validated_data.pop('ingredients')
-#         tags_data = validated_data.pop('tags')
-
-#         # Создаем рецепт
-#         recipe = Recipe.objects.create(**validated_data)
-
-#         # Работа с ингредиентами
-#         self._create_or_update_ingredients(recipe, ingredients_data)
-
-#         # Работа с тегами
-#         recipe.tags.set(tags_data)
-
-#         return recipe
-
-#     def update(self, instance, validated_data):
-#         if self.context['request'].user != instance.author:
-#             raise exceptions.PermissionDenied('Вы не можете редактировать этот рецепт.')
-
-#         # Проверка и валидация
-#         self.validate(validated_data)
-
-#         # Обновление полей
-#         instance.name = validated_data.get('name', instance.name)
-#         instance.image = validated_data.get('image', instance.image)
-#         instance.text = validated_data.get('text', instance.text)
-#         instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
-
-#         # Работа с ингредиентами
-#         if 'ingredients' in validated_data:
-#             ingredients_data = validated_data.pop('ingredients')
-#             self._create_or_update_ingredients(instance, ingredients_data)
-
-#         # Работа с тегами
-#         if 'tags' in validated_data:
-#             instance.tags.set(validated_data.pop('tags'))
-
-#         instance.save()
-#         return instance
-
-#     def _create_or_update_ingredients(self, recipe, ingredients_data):
-#         """Метод для создания или обновления ингредиентов в рецепте"""
-#         for ingredient_data in ingredients_data:
-#             ingredient = get_object_or_404(Ingredient, id=ingredient_data['id'])
-#             recipe_ingredient, created = RecipeIngredient.objects.get_or_create(
-#                 recipe=recipe,
-#                 ingredient=ingredient
-#             )
-#             recipe_ingredient.amount = ingredient_data['amount']
-#             recipe_ingredient.save()

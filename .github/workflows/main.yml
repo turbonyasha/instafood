@@ -48,24 +48,6 @@ jobs:
           cd backend/
           python manage.py test
           
-      # - name: Checkout code
-      #   uses: actions/checkout@v2
-      
-      # - name: Set up Node.js
-      #   uses: actions/setup-node@v2
-      #   with:
-      #     node-version: '14'
-      
-      # - name: Install frontend dependencies
-      #   run: |
-      #     cd frontend
-      #     npm install
-      
-      # # - name: Run frontend tests
-      # #   run: |
-      # #     cd frontend
-      # #     npm test
-          
   build_and_push:
     runs-on: ubuntu-latest
     needs: tests
@@ -142,7 +124,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SERVER_SSH_PASSPHRASE }}
           script: |
-            cd kittygram
+            cd foodgram
             if [ ! -f .env ]; then
               echo ".env file not found!"
               exit 1

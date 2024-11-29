@@ -117,7 +117,8 @@ class RecipeCUDSerializer(serializers.ModelSerializer):
         read_only_fields = ('author',)
 
     def validate(self, attrs):
-        validate_tag_ingredients(model=Ingredient)
+        # изменения внесены, не создавался рецепт на сайте
+        validate_tag_ingredients(self=self, model=Ingredient)
         return attrs
 
     def _create_or_update_ingredients(self, recipe, ingredients_data):

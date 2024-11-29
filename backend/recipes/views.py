@@ -116,9 +116,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
         ingredients_summary = defaultdict(int)
         recipes_names = []
         for recipe in in_cart_recipes:
-            recipes_names.append(recipe.name)
+            # исправлено, не скачивался файл на релизе
+            recipes_names.append(recipe.recipe.name)
             ingredients = RecipeIngredient.objects.filter(
-                recipe=recipe
+                recipe=recipe.recipe
             )
             for ingredient in ingredients:
                 ingredients_summary[ingredient.name] += ingredient.amount

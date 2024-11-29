@@ -1,7 +1,6 @@
 from django.contrib import admin
 
 import core.constants as const
-from core.validators import validate_tag_ingredients
 
 from .models import (FavoriteRecipes, Ingredient, Recipe, RecipeIngredient,
                      RecipeTag, ShoppingCart, Tag)

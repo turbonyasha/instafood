@@ -1,5 +1,7 @@
 import csv
+import os
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import models
 from django.shortcuts import get_object_or_404
@@ -31,7 +33,7 @@ class Command(BaseCommand):
         return data
 
     def handle(self, *args, **options):
-        path = 'C:/Dev/foodgram/data/ingredients.csv'
+        path = os.path.join(settings.BASE_DIR, 'data', 'ingredients.csv')
         try:
             with open(path, 'r', encoding='utf-8') as csv_file:
                 reader = csv.reader(csv_file)

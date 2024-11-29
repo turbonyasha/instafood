@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 import core.constants as const
+from core.validators import validate_tag_ingredients
 from core.models import Base64ImageField
 from users.serializers import CustomUserSerializer
 
@@ -115,6 +116,10 @@ class RecipeCUDSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('author',)
 
+    def validate(self, attrs):
+        validate_tag_ingredients(model=Ingredient)
+        return attrs
+
     def _create_or_update_ingredients(self, recipe, ingredients_data):
         for ingredient_data in ingredients_data:
             ingredient = get_object_or_404(
@@ -136,7 +141,6 @@ class RecipeCUDSerializer(serializers.ModelSerializer):
             recipe=recipe, ingredients_data=ingredients_data
         )
         recipe.tags.set(tags_data)
-        recipe.clean()
         return recipe
 
     def update(self, instance, validated_data):
@@ -152,7 +156,6 @@ class RecipeCUDSerializer(serializers.ModelSerializer):
             self._create_or_update_ingredients(instance, ingredients_data)
         if 'tags' in validated_data:
             instance.tags.set(validated_data.pop('tags'))
-        instance.clean()
         instance.save()
         return instance
 

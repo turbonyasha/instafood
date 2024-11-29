@@ -32,7 +32,7 @@ FAVORITE_VIEW = 'м Избранном'
 SHOPPING_CART_VIEW = 'й Корзине'
 FILE_HEADER = 'Список покупок для рецептов: {file_header}'
 FILE_ROW = '▢ {ingredient}: {amount} {measurement_unit}'
-FILENAME = 'shopping_cart.txt'
+FILENAME = 'shopping_cart'
 
 USER_NOT_FOUND = 'Пользователь не найден.'
 SUBSCRIBTION_MYSELF = 'Вы не можете подписаться на самого себя.'

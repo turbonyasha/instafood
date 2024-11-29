@@ -5,7 +5,9 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import (
+    IsAuthenticated, IsAuthenticatedOrReadOnly
+)
 from rest_framework.response import Response
 
 import core.constants as const
@@ -23,7 +25,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     """Представление для рецептов."""
     queryset = Recipe.objects.all()
     http_method_names = const.HTTP_METHOD_NAMES
-    permission_classes = [AdminOrSafeMethodPermission]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     filterset_class = RecipesFilterSet
 
     def get_queryset(self):
@@ -108,20 +110,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def get_and_download_shopping_cart(self, request):
         """Реализует получение файла со списком покупок."""
-        favorite_recipes = FavoriteRecipes.objects.filter(
+        in_cart_recipes = ShoppingCart.objects.filter(
             user=self.request.user
         ).select_related('recipe')
         ingredients_summary = defaultdict(int)
         recipes_names = []
-        for favorite in favorite_recipes:
-            recipes_names.append(favorite.recipe.name)
+        for recipe in in_cart_recipes:
+            recipes_names.append(recipe.name)
             ingredients = RecipeIngredient.objects.filter(
-                recipe=favorite.recipe
+                recipe=recipe
             )
             for ingredient in ingredients:
-                ingredients_summary[ingredient.ingredient] += ingredient.amount
+                ingredients_summary[ingredient.name] += ingredient.amount
+        file_header = ', '.join(recipes_names)
         shopping_list = [const.FILE_HEADER.format(
-            file_header=', '.join(recipes_names)
+            file_header=file_header
         )]
         for ingredient, amount in ingredients_summary.items():
             shopping_list.append(const.FILE_ROW.format(
@@ -129,12 +132,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 amount=amount,
                 measurement_unit=ingredient.measurement_unit
             ))
-        filename = const.FILENAME
         response = HttpResponse(
             '\n'.join(shopping_list),
             content_type='text/plain'
         )
-        response['Content-Disposition'] = f'attachment; filename={filename}'
+        response['Content-Disposition'] = (
+            f'attachment; filename="{const.FILENAME}.txt"'
+        )
         return response
 
 

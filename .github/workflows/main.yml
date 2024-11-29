@@ -152,6 +152,7 @@ jobs:
             sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
             sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic --noinput
             sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /backend_static/static/
+            sudo docker compose -f docker-compose.production.yml exec backend cp python manage.py import_csv
           
   notify:
     runs-on: ubuntu-latest
@@ -161,4 +162,4 @@ jobs:
         run: |
           curl -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
             -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-            -d text="${{ github.actor }} задеплоил Foodgram с комментарием ${{ github.event.commits[0].message }}: https://github.com/${{ github.repository }}/commit/${{github.sha}}"
+            -d text="${{ github.actor }} задеплоила Foodgram с комментарием ${{ github.event.commits[0].message }}: https://github.com/${{ github.repository }}/commit/${{github.sha}}"

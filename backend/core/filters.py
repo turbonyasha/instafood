@@ -18,9 +18,11 @@ class RecipesFilterSet(filters.FilterSet):
         method='filter_is_favorited',
         label='Рецепт в избранных'
     )
-    tags = filters.AllValuesMultipleFilter(
+    tags = filters.ModelMultipleChoiceFilter(
         field_name='tags__slug',
-        label='Теги'
+        queryset=Tag.objects.all(),
+        to_field_name='slug',
+        conjoined=False
     )
 
     class Meta:

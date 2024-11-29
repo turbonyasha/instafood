@@ -11,25 +11,25 @@ services:
       - pg_data:/var/lib/postgresql/data
   backend:
     build: ./backend/
-    # image: turbonyasha/kittygram_backend
     env_file: .env
     volumes:
       - media:/media
+      - static:/backend_static
     depends_on:
       - db
   frontend:
     env_file: .env
     build: ./frontend/
-    # image: turbonyasha/kittygram_frontend
-    command: cp -r /app/build/. /static/
+    # command: cp -r /app/build/. /static/
     volumes:
       - static:/static
   gateway:
-    # image: turbonyasha/kittygram_gateway
     build: ./nginx/
     env_file: .env
     ports:
-      - 9000:80
+      - 1000:80
     volumes:
       - static:/static
       - media:/media
+    depends_on:
+    - backend

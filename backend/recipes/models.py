@@ -72,7 +72,7 @@ class Recipe(models.Model):
         blank=False,
         verbose_name='Картинка',
         null=False,
-        upload_to='static/recipe/',
+        upload_to='recipe/image',
     )
     text = models.TextField(
         verbose_name='Текст',
@@ -125,10 +125,6 @@ class Recipe(models.Model):
 
     def __str__(self):
         return f'{self.name[:30]}, автор {self.author}'
-
-    def clean(self):
-        valid.validate_tag_ingredients(self, model=Ingredient)
-        return super().clean()
 
 
 class RecipeIngredient(models.Model):

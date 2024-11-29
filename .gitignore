@@ -140,3 +140,7 @@ dmypy.json
 
 static/
 media/
+
+docker-compose.yml
+nginx_home.conf
+db.sqlite3.bak

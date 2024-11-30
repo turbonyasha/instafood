@@ -6,7 +6,7 @@ from rest_framework import routers
 
 from recipes.views import (
     IngredientsViewSet, RecipeViewSet, TagsViewSet,
-    RecipeShortLinkView, RedirectToRecipeView
+    redirect_to_recipe
 )
 from users.views import CustomUserViewSet, SubscriptionViewSet, get_user_token
 
@@ -21,16 +21,12 @@ urlpatterns = [
     path('api/users/subscriptions/', SubscriptionViewSet.as_view(
         {'get': 'list'}
     ), name='subscriptions-list'),
-    path('api/recipes/<int:pk>/get-link/',
-         RecipeShortLinkView.as_view(),
-         name='recipe_get_link'
-         ),
     path('api/', include(router.urls)),
     path('api/auth/token/login/', get_user_token, name='token-login'),
     path('api/', include('djoser.urls')),
     path('api/auth/', include('djoser.urls.authtoken')),
     path('<str:short_link>/',
-         RedirectToRecipeView.as_view(),
+         redirect_to_recipe,
          name='redirect_to_recipe'
          ),
 ]

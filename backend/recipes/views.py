@@ -69,6 +69,24 @@ class RecipeViewSet(viewsets.ModelViewSet):
         self.permission_classes = [IsAuthorOrAdmin]
         return super().destroy(request, *args, **kwargs)
 
+    @action(detail=True, methods=['get'], url_path='get-link')
+    def get_short_link(self, request, pk):
+        """Возвращает короткую ссылку."""
+        recipe = self.get_object()
+        if recipe.short_link:
+            short_link = recipe.short_link
+        else:
+            short_link = ''.join(
+                random.choice(
+                    const.SHORT_LINK_STR
+                ) for _ in range(const.SHORT_LINK_LENGHT))
+            recipe.short_link = short_link
+        recipe.save()
+        return Response(
+            {'short-link': f'{const.PROJECT_URL}/{short_link}'},
+            status=status.HTTP_200_OK
+        )
+
     @action(detail=True, methods=['post', 'delete'], url_path='favorite')
     def favorite(self, request, pk=None):
         """Реализует работу Избранного."""
@@ -137,6 +155,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return response
 
 
+def redirect_to_recipe(request, short_link):
+    """Реализует перенаправление с короткой ссылки."""
+    recipe = get_object_or_404(
+        Recipe, short_link=short_link
+    )
+    return redirect(recipe.get_absolute_url())
+
+
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):
     """Представление для тегов."""
     queryset = Tag.objects.all()
@@ -162,35 +188,35 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
 
 
-class RecipeShortLinkView(APIView):
-    """Представление для генерации короткой ссылки для рецепта."""
-    permission_classes = [IsAuthenticatedOrReadOnly]
+# class RecipeShortLinkView(APIView):
+#     """Представление для генерации короткой ссылки для рецепта."""
+#     permission_classes = [IsAuthenticatedOrReadOnly]
 
-    def get(self, request, pk, *args, **kwargs):
-        recipe = get_object_or_404(Recipe, pk=pk)
-        if recipe.short_link:
-            short_link = recipe.short_link
-        else:
-            short_link = self.generate_short_link()
-            recipe.short_link = short_link
-            recipe.save()
-        full_url = urljoin(const.PROJECT_URL + '/', short_link)
-        return Response({
-            "short-link": full_url
-        }, status=status.HTTP_200_OK)
+#     def get(self, request, pk, *args, **kwargs):
+#         recipe = get_object_or_404(Recipe, pk=pk)
+#         if recipe.short_link:
+#             short_link = recipe.short_link
+#         else:
+#             short_link = self.generate_short_link()
+#             recipe.short_link = short_link
+#             recipe.save()
+#         full_url = urljoin(const.PROJECT_URL + '/', short_link)
+#         return Response({
+#             "short-link": full_url
+#         }, status=status.HTTP_200_OK)
 
-    def generate_short_link(self):
-        """Генерация короткой ссылки."""
-        short_url = ''.join(
-            random.choice(
-                const.SHORT_LINK_STR
-            ) for _ in range(const.SHORT_LINK_LENGHT))
-        return short_url
+    # def generate_short_link(self):
+    #     """Генерация короткой ссылки."""
+    #     short_url = ''.join(
+    #         random.choice(
+    #             const.SHORT_LINK_STR
+    #         ) for _ in range(const.SHORT_LINK_LENGHT))
+    #     return short_url
 
 
-class RedirectToRecipeView(APIView):
-    """Представление для редиректа по короткой ссылке на рецепт."""
+# class RedirectToRecipeView(APIView):
+#     """Представление для редиректа по короткой ссылке на рецепт."""
 
-    def get(self, request, short_link, *args, **kwargs):
-        recipe = Recipe.objects.get_object_or_404(short_link=short_link)
-        return redirect(recipe.get_absolute_url())
+#     def get(self, request, short_link, *args, **kwargs):
+#         recipe = Recipe.objects.get_object_or_404(short_link=short_link)
+#         return redirect(recipe.get_absolute_url())

@@ -123,7 +123,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
             for recipe in recipes:
                 ingredients_summary[recipe.ingredient.name] += (
-                    recipe.ingredient.amount
+                    recipe.amount
                 )
         file_header = ', '.join(recipes_names)
         shopping_list = [const.FILE_HEADER.format(

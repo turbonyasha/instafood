@@ -17,10 +17,14 @@ from core.filters import RecipesFilterSet
 from core.permissions import AdminOrSafeMethodPermission, IsAuthorOrAdmin
 from core.utils import favorite_or_shopping_cart_action
 
-from .models import (FavoriteRecipes, Ingredient, Recipe, RecipeIngredient,
-                     ShoppingCart, Tag)
-from .serializers import (IngredientSerializer, RecipeCUDSerializer,
-                          RecipeRetriveSerializer, TagSerializer)
+from .models import (
+    FavoriteRecipes, Ingredient, Recipe, RecipeIngredient,
+    ShoppingCart, Tag
+)
+from .serializers import (
+    IngredientSerializer, RecipeCUDSerializer,
+    RecipeRetriveSerializer, TagSerializer
+)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -164,8 +168,9 @@ def redirect_to_recipe(request, short_link):
     recipe = get_object_or_404(
         Recipe, short_link=short_link
     )
-    absolute_url = request.build_absolute_uri(recipe.get_absolute_url())
-    return HttpResponseRedirect(absolute_url)
+    # absolute_url = request.build_absolute_uri(recipe.get_absolute_url())
+    # return HttpResponseRedirect(absolute_url)
+    return HttpResponseRedirect(f'/recipes/{recipe.id}')
 
 
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):

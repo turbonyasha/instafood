@@ -90,6 +90,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk=None):
         """Реализует работу Избранного."""
         user = self.request.user
+        tags = request.query_params.get('tags', None)
+        queryset = Recipe.objects.filter(id=pk)
+        if tags:
+            queryset = queryset.filter(tags__name__icontains=tags)
         return favorite_or_shopping_cart_action(
             request_method=self.request.method,
             model=FavoriteRecipes,

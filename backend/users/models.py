@@ -28,7 +28,7 @@ class FoodgramUser(AbstractUser):
     is_subscribed = models.BooleanField(
         default=False,
         verbose_name='В подписках',
-        )
+    )
 
     class Meta:
         verbose_name = 'пользователь'

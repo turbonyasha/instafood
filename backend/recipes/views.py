@@ -83,7 +83,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             recipe.short_link = short_link
         recipe.save()
         return Response(
-            {'short-link': f'{const.PROJECT_URL}/{short_link}'},
+            {'short-link': urljoin(const.PROJECT_URL + '/', short_link)},
             status=status.HTTP_200_OK
         )
 

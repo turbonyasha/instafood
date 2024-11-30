@@ -81,6 +81,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 ) for _ in range(const.SHORT_LINK_LENGHT))
             recipe.short_link = short_link
         recipe.save()
+        print(urljoin(const.PROJECT_URL + '/', short_link))
         return Response(
             {'short-link': urljoin(const.PROJECT_URL + '/', short_link)},
             status=status.HTTP_200_OK
@@ -163,7 +164,8 @@ def redirect_to_recipe(request, short_link):
     recipe = get_object_or_404(
         Recipe, short_link=short_link
     )
-    return HttpResponseRedirect(recipe.get_absolute_url())
+    absolute_url = request.build_absolute_uri(recipe.get_absolute_url())
+    return HttpResponseRedirect(absolute_url)
 
 
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):

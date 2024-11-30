@@ -1,5 +1,6 @@
 import random
 from collections import defaultdict
+from urllib.parse import urljoin
 
 from django.db.models import Exists, OuterRef
 from django.http import HttpResponse
@@ -67,21 +68,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         self.permission_classes = [IsAuthorOrAdmin]
         return super().destroy(request, *args, **kwargs)
-
-    # @action(detail=True, methods=['get'], url_path='get-link')
-    # def get_short_link(self, request, pk):
-    #     """Возвращает короткую ссылку."""
-    #     recipe = self.get_object()
-    #     if recipe.short_link:
-    #         short_link = recipe.short_link
-    #     else:
-    #         short_link = generate_short_link()
-    #         recipe.short_link = short_link
-    #     recipe.save()
-    #     return Response(
-    #         {'short-link': f'{const.PROJECT_URL}/{short_link}'},
-    #         status=status.HTTP_200_OK
-    #     )
 
     @action(detail=True, methods=['post', 'delete'], url_path='favorite')
     def favorite(self, request, pk=None):
@@ -151,14 +137,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return response
 
 
-# def redirect_to_recipe(request, short_link):
-#     """Реализует перенаправление с короткой ссылки."""
-#     recipe = get_object_or_404(
-#         Recipe, short_link=short_link
-#     )
-#     return redirect(reverse('recipe-detail', kwargs={'pk': recipe.pk}))
-
-
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):
     """Представление для тегов."""
     queryset = Tag.objects.all()
@@ -196,7 +174,7 @@ class RecipeShortLinkView(APIView):
             short_link = self.generate_short_link()
             recipe.short_link = short_link
             recipe.save()
-        full_url = f"{const.PROJECT_URL}/{short_link}"
+        full_url = urljoin(const.PROJECT_URL + '/', short_link)
         return Response({
             "short-link": full_url
         }, status=status.HTTP_200_OK)

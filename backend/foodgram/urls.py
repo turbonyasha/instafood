@@ -25,7 +25,7 @@ urlpatterns = [
     path('api/auth/token/login/', get_user_token, name='token-login'),
     path('api/', include('djoser.urls')),
     path('api/auth/', include('djoser.urls.authtoken')),
-    path('<str:short_link>/',
+    path('s/<str:short_link>/',
          redirect_to_recipe,
          name='redirect_to_recipe'
          ),

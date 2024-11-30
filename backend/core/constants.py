@@ -41,4 +41,4 @@ SUBSCRIPTION_NOTFOUND = 'Подписка не существует.'
 
 AUTH_FAIL_TEXT = 'Неверный email или пароль.'
 
-PROJECT_URL = 'https://janedomain.ru'
+PROJECT_URL = 'https://janedomain.ru/s/'

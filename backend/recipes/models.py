@@ -128,7 +128,7 @@ class Recipe(models.Model):
         return f'{self.name[:30]}, автор {self.author}'
 
     def get_absolute_url(self):
-        return reverse('recipe-detail', kwargs={'pk': self.pk})
+        return reverse('recipes-detail', kwargs={'pk': self.pk})
 
 
 class RecipeIngredient(models.Model):

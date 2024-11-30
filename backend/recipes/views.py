@@ -168,7 +168,10 @@ def redirect_to_recipe(request, short_link):
     recipe = get_object_or_404(
         Recipe, short_link=short_link
     )
-    return HttpResponseRedirect(recipe.get_absolute_url())
+    absolute_url = recipe.get_absolute_url()
+    if absolute_url.startswith('/api/'):
+        absolute_url = absolute_url.replace('/api/', '/')
+    return HttpResponseRedirect(absolute_url)
 
 
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):

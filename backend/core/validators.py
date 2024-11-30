@@ -48,15 +48,15 @@ def validate_tag_ingredients(
                     field=field
                 )
             )
-    for ingredient in ingredients.all():
+    for ingredient in ingredients:
         if not model.objects.filter(id=ingredient.id).exists():
             raise ValidationError(
                 const.VALID_INGREDIENT.format(
                     ingredient=ingredient
                 )
             )
-    tag_ids = [tag.id for tag in tags.all()]
-    ingredient_ids = [ingredient.id for ingredient in ingredients.all()]
+    tag_ids = [tag.id for tag in tags]
+    ingredient_ids = [ingredient.id for ingredient in ingredients]
     for ids, ids_name in [
         (tag_ids, const.TAGS),
         (ingredient_ids, const.INGREDIENTS)

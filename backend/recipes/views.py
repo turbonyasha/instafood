@@ -129,9 +129,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
         shopping_list = [const.FILE_HEADER.format(
             file_header=file_header
         )]
-        for ingredient, amount in ingredients_summary.items():
+        for ingredient_name, amount in ingredients_summary.items():
+            ingredient = Ingredient.objects.filter(name=ingredient_name).first()
             shopping_list.append(const.FILE_ROW.format(
-                ingredient=ingredient.name,
+                ingredient=ingredient_name,
                 amount=amount,
                 measurement_unit=ingredient.measurement_unit
             ))

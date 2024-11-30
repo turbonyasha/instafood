@@ -118,11 +118,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
         for recipe in in_cart_recipes:
             # исправлено, не скачивался файл на релизе
             recipes_names.append(recipe.recipe.name)
-            ingredients = RecipeIngredient.objects.filter(
+            recipes = RecipeIngredient.objects.filter(
                 recipe=recipe.recipe
             )
-            for ingredient in ingredients:
-                ingredients_summary[ingredient.name] += ingredient.amount
+            for recipe in recipes:
+                ingredients_summary[recipe.ingredient.name] += (
+                    recipe.ingredient.amount
+                )
         file_header = ', '.join(recipes_names)
         shopping_list = [const.FILE_HEADER.format(
             file_header=file_header

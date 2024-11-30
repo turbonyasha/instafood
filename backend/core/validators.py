@@ -37,8 +37,8 @@ def validate_tag_ingredients(
 ):
     """Валидация тегов и ингридиентов для модели рецептов."""
     for field, field_name in [
-        (ingredients.exists(), const.INGREDIENTS),
-        (tags.exists(), const.TAGS),
+        (ingredients, const.INGREDIENTS),
+        (tags, const.TAGS),
         (image, const.PICTURE),
         (cooking_time and cooking_time > 0, const.COOKING_TIME),
     ]:

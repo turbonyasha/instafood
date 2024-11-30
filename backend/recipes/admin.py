@@ -12,6 +12,7 @@ class RecipeIngredientInline(admin.TabularInline):
     extra = 1
     fields = ('ingredient', 'amount', 'measurement_unit_display')
     readonly_fields = ('measurement_unit_display',)
+    autocomplete_fields = ('ingredient',)
 
     def measurement_unit_display(self, obj):
         """Метод для отображения единицы измерения из модели Ingredient."""

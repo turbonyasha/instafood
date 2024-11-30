@@ -2,7 +2,6 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 import core.constants as const
-from core.validators import validate_tag_ingredients
 from core.models import Base64ImageField
 from users.serializers import CustomUserSerializer
 
@@ -117,13 +116,41 @@ class RecipeCUDSerializer(serializers.ModelSerializer):
         read_only_fields = ('author',)
 
     def validate(self, attrs):
-        validate_tag_ingredients(
-            ingredients=attrs.get('ingredients'),
-            tags=attrs.get('tags'),
-            image=attrs.get('image'),
-            cooking_time=attrs.get('cooking_time'),
-            model=Ingredient
-        )
+        cooking_time = attrs.get('cooking_time', None)
+        ingredients = attrs.get('ingredients', [])
+        tags = attrs.get('tags', [])
+        for field, field_name in [
+            (ingredients, const.INGREDIENTS),
+            (tags, const.TAGS),
+            (attrs.get('image', None), const.PICTURE),
+            (cooking_time and cooking_time > 0, const.COOKING_TIME),
+        ]:
+            if not field:
+                raise serializers.ValidationError(
+                    const.VALID_EMPTY.format(
+                        field=field
+                    )
+                )
+        for ingredient in ingredients:
+            ingredient_id = ingredient.get('id')
+            if not Ingredient.objects.filter(id=ingredient_id).exists():
+                raise serializers.ValidationError(
+                    const.VALID_INGREDIENT.format(ingredient=ingredient)
+                )
+        tag_ids = [tag.id for tag in tags]
+        ingredient_ids = [
+            ingredient['id'] for ingredient in ingredients
+        ]
+        for ids, ids_name in [
+            (tag_ids, const.TAGS),
+            (ingredient_ids, const.INGREDIENTS)
+        ]:
+            if len(ids) != len(set(ids)):
+                raise serializers.ValidationError(
+                    const.VALID_UNIQUE.format(
+                        ids_name=ids_name
+                    )
+                )
         return attrs
 
     def _create_or_update_ingredients(self, recipe, ingredients_data):

@@ -139,10 +139,10 @@ DJOSER = {
     },
 }
 
-PROJECT_URL = 'https://janedomain.ru'
+PROJECT_URL = 'https://janedomain.ru/'
 
 CORS_ALLOWED_ORIGINS = [
-    "https://janedomain.ru",
+    'https://janedomain.ru'
 ]
 
 CORS_ALLOW_METHODS = [

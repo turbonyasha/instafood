@@ -3,8 +3,8 @@ from collections import defaultdict
 from urllib.parse import urljoin
 
 from django.db.models import Exists, OuterRef
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import get_object_or_404
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (
@@ -159,7 +159,7 @@ def redirect_to_recipe(request, short_link):
     recipe = get_object_or_404(
         Recipe, short_link=short_link
     )
-    return redirect(recipe.get_absolute_url())
+    return HttpResponseRedirect(recipe.get_absolute_url())
 
 
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):
@@ -185,37 +185,3 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
         if search_param:
             queryset = queryset.filter(name__icontains=search_param)
         return queryset
-
-
-# class RecipeShortLinkView(APIView):
-#     """Представление для генерации короткой ссылки для рецепта."""
-#     permission_classes = [IsAuthenticatedOrReadOnly]
-
-#     def get(self, request, pk, *args, **kwargs):
-#         recipe = get_object_or_404(Recipe, pk=pk)
-#         if recipe.short_link:
-#             short_link = recipe.short_link
-#         else:
-#             short_link = self.generate_short_link()
-#             recipe.short_link = short_link
-#             recipe.save()
-#         full_url = urljoin(const.PROJECT_URL + '/', short_link)
-#         return Response({
-#             "short-link": full_url
-#         }, status=status.HTTP_200_OK)
-
-    # def generate_short_link(self):
-    #     """Генерация короткой ссылки."""
-    #     short_url = ''.join(
-    #         random.choice(
-    #             const.SHORT_LINK_STR
-    #         ) for _ in range(const.SHORT_LINK_LENGHT))
-    #     return short_url
-
-
-# class RedirectToRecipeView(APIView):
-#     """Представление для редиректа по короткой ссылке на рецепт."""
-
-#     def get(self, request, short_link, *args, **kwargs):
-#         recipe = Recipe.objects.get_object_or_404(short_link=short_link)
-#         return redirect(recipe.get_absolute_url())

@@ -34,7 +34,7 @@ def validate_cooking_time(cooking_time):
 
 def validate_tag_ingredients(
         self, ingredients, tags, image, cooking_time, model
-    ):
+):
     """Валидация тегов и ингридиентов для модели рецептов."""
     for field, field_name in [
         (ingredients.exists(), const.INGREDIENTS),

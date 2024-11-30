@@ -1,6 +1,3 @@
-import random
-
-from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -44,11 +41,3 @@ def favorite_or_shopping_cart_action(
             return Response({'detail': const.RECIPE_NOT_IN.format(
                 message_text=message_text
             )}, status=status.HTTP_404_NOT_FOUND)
-
-
-def generate_short_link():
-    """Генерация короткой ссылки для рецепта."""
-    short_url = ''
-    for _ in range(const.SHORT_LINK_LENGHT):
-        short_url += random.choice(const.SHORT_LINK_STR)
-    return settings.PROJECT_URL + short_url

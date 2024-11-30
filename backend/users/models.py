@@ -25,7 +25,10 @@ class FoodgramUser(AbstractUser):
         verbose_name='Аватар',
         upload_to='avatar/image'
     )
-    is_subscribed = models.BooleanField(default=False)
+    is_subscribed = models.BooleanField(
+        default=False,
+        verbose_name='В подписках',
+        )
 
     class Meta:
         verbose_name = 'пользователь'

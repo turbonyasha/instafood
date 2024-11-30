@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 
 import core.validators as valid
 from users.models import FoodgramUser
@@ -26,7 +27,7 @@ class Tag(models.Model):
         ordering = ('-id',)
 
     def __str__(self):
-        return self.slug
+        return self.name
 
 
 class Ingredient(models.Model):
@@ -125,6 +126,9 @@ class Recipe(models.Model):
 
     def __str__(self):
         return f'{self.name[:30]}, автор {self.author}'
+
+    def get_absolute_url(self):
+        return reverse('recipes-detail', kwargs={'pk': self.pk})
 
 
 class RecipeIngredient(models.Model):

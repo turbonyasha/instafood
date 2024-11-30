@@ -40,3 +40,5 @@ SUBSCRIBTION_ALREADY = 'Вы уже подписаны на этого поль�
 SUBSCRIPTION_NOTFOUND = 'Подписка не существует.'
 
 AUTH_FAIL_TEXT = 'Неверный email или пароль.'
+
+PROJECT_URL = 'https://janedomain.ru'

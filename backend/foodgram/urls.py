@@ -4,8 +4,10 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework import routers
 
-from recipes.views import (IngredientsViewSet, RecipeViewSet, TagsViewSet,
-                           redirect_to_recipe)
+from recipes.views import (
+    IngredientsViewSet, RecipeViewSet, TagsViewSet,
+    RecipeShortLinkView, RedirectToRecipeView
+)
 from users.views import CustomUserViewSet, SubscriptionViewSet, get_user_token
 
 router = routers.DefaultRouter()
@@ -19,11 +21,18 @@ urlpatterns = [
     path('api/users/subscriptions/', SubscriptionViewSet.as_view(
         {'get': 'list'}
     ), name='subscriptions-list'),
+    path('api/recipes/<int:pk>/get-link/',
+         RecipeShortLinkView.as_view(),
+         name='recipe_get_link'
+         ),
     path('api/', include(router.urls)),
     path('api/auth/token/login/', get_user_token, name='token-login'),
     path('api/', include('djoser.urls')),
     path('api/auth/', include('djoser.urls.authtoken')),
-    path('<str:short_link>/', redirect_to_recipe, name='recipe_detail'),
+    path('<str:short_link>/',
+         RedirectToRecipeView.as_view(),
+         name='redirect_to_recipe'
+         ),
 ]
 
 if settings.DEBUG:

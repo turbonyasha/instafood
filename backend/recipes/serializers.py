@@ -119,11 +119,9 @@ class RecipeCUDSerializer(serializers.ModelSerializer):
         cooking_time = attrs.get('cooking_time', None)
         ingredients = attrs.get('ingredients', [])
         tags = attrs.get('tags', [])
-        image = attrs.get('image', None)
         for field, field_name in [
             (ingredients, const.INGREDIENTS),
             (tags, const.TAGS),
-            (image, const.PICTURE),
             (cooking_time and cooking_time > 0, const.COOKING_TIME),
         ]:
             if field is None or (isinstance(field, list) and not field):
@@ -133,10 +131,6 @@ class RecipeCUDSerializer(serializers.ModelSerializer):
         if cooking_time is not None and cooking_time <= 0:
             raise serializers.ValidationError(
                 const.VALID_EMPTY.format(field=const.COOKING_TIME)
-            )
-        if image == '' or (self.instance and not self.instance.image):
-            raise serializers.ValidationError(
-                const.VALID_EMPTY.format(field=const.PICTURE)
             )
         for ingredient in ingredients:
             ingredient_id = ingredient.get('id')

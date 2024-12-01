@@ -2,6 +2,8 @@ volumes:
   pg_data:
   static:
   media:
+  docs:
+    driver: local
 
 services:
   db:
@@ -33,4 +35,17 @@ services:
       - static:/static
       - media:/media
     depends_on:
+      - backend
+
+  nginx:
+    container_name: foodgram-proxy
+    image: nginx:1.25.4-alpine
+    ports:
+      - "81:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ../frontend/build:/usr/share/nginx/html/
+      - docs:/usr/share/nginx/html/api/docs/
+    depends_on:
+      - frontend
       - backend

@@ -65,12 +65,7 @@ jobs:
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/foodgram_backend ./backend
           docker push ${{ secrets.DOCKER_USERNAME }}/foodgram_backend
-          
-      - name: Build and push frontend image
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/foodgram_frontend ./frontend
-          docker push ${{ secrets.DOCKER_USERNAME }}/foodgram_frontend
-          
+
       - name: Build and push gateway image
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/foodgram_gateway ./nginx
@@ -100,7 +95,6 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
-          USE_SQLITE: false
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}

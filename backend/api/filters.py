@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django_filters import rest_framework as filters
 from recipes.models import Recipe, Tag
-from users.models import FoodgramUser
+from recipes.models import FoodgramUser
 
 
 class RecipesFilterSet(filters.FilterSet):
@@ -29,19 +29,19 @@ class RecipesFilterSet(filters.FilterSet):
         model = Recipe
         fields = ['is_favorited', 'is_in_shopping_cart', 'author', 'tags']
 
-    def filter_is_in_shopping_cart(self, queryset, name, value):
+    def filter_is_in_shopping_cart(self, recipes, name, value):
         if value is not None:
             if value:
-                return queryset.filter(is_in_shopping_cart_annotated=True)
-            return queryset.filter(is_in_shopping_cart_annotated=False)
-        return queryset
+                return recipes.filter(is_in_shopping_cart_annotated=True)
+            return recipes.filter(is_in_shopping_cart_annotated=False)
+        return recipes
 
-    def filter_is_favorited(self, queryset, name, value):
+    def filter_is_favorited(self, recipes, name, value):
         if value is not None:
             if value:
-                return queryset.filter(is_favorited_annotated=True)
-            return queryset.filter(is_favorited_annotated=False)
-        return queryset
+                return recipes.filter(is_favorited_annotated=True)
+            return recipes.filter(is_favorited_annotated=False)
+        return recipes
 
 
 class UserFilterSet(filters.FilterSet):

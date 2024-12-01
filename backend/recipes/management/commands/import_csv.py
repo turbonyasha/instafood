@@ -1,6 +1,7 @@
 import csv
 import os
 
+from django.db import IntegrityError
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import models
@@ -8,9 +9,9 @@ from django.shortcuts import get_object_or_404
 
 from recipes.models import Ingredient
 
-HELP = 'Импорт данных из CSV-файлов для учебного проекта API_YamDB.'
+HELP = 'Импорт данных из CSV-файлов для Foodgram.'
 ROW_ERROR = (
-    "Неправильное количество столбцов в CSV файле."
+    'Неправильное количество столбцов в CSV файле.'
     "Ожидаются два столбца: 'name' и 'measurement_unit'."
 )
 
@@ -39,25 +40,22 @@ class Command(BaseCommand):
                 reader = csv.reader(csv_file)
                 headers = next(reader)
                 headers = [header.strip() for header in headers]
-                print(f"Headers: {headers}")
                 if len(headers) != 2:
                     self.stdout.write(self.style.ERROR(ROW_ERROR))
                     return
+                ingredients = []
                 for row in reader:
                     data = {
                         'name': row[0].strip(),
                         'measurement_unit': row[1].strip()
                     }
-                    ingredient, created = Ingredient.objects.get_or_create(
-                        name=data['name'],
-                        measurement_unit=data['measurement_unit'],
-                        defaults=data
-                    )
-                    if created:
-                        self.stdout.write(self.style.SUCCESS(
-                            f"Создан новый ингредиент: {data['name']}"))
-                    else:
-                        self.stdout.write(self.style.SUCCESS(
-                            f"Ингредиент уже существует: {data['name']}"))
+                    ingredients.append(Ingredient(**data))
+                try:
+                    Ingredient.objects.bulk_create(ingredients)
+                    self.stdout.write(self.style.SUCCESS(
+                        f"Все ингредиенты созданы, последний: {data['name']}"))
+                except IntegrityError:
+                    self.stdout.write(self.style.ERROR(
+                        'Ошибка создания ингредиентов: Возможно, присутствуют дубли.'))
         except FileNotFoundError:
             self.stdout.write(self.style.ERROR(f"Файл {path} не найден."))

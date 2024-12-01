@@ -6,9 +6,8 @@ from rest_framework import routers
 
 from recipes.views import (
     IngredientsViewSet, RecipeViewSet, TagsViewSet,
-    redirect_to_recipe
+    redirect_to_recipe, CustomUserViewSet, SubscriptionViewSet, get_user_token
 )
-from users.views import CustomUserViewSet, SubscriptionViewSet, get_user_token
 
 router = routers.DefaultRouter()
 router.register(r'recipes', RecipeViewSet, basename='recipes')

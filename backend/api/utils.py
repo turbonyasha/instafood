@@ -1,9 +1,9 @@
 from rest_framework import status
 from rest_framework.response import Response
 
-import core.constants as const
+import api.constants as const
 from recipes.models import Recipe
-from users.serializers import RecipesSubscriptionSerializer
+from api.serializers import RecipesSubscriptionSerializer
 
 
 def favorite_or_shopping_cart_action(

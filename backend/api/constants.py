@@ -1,6 +1,3 @@
-# разделить файл по модулям
-# Детали протоколов подставьте в места их применения.
-
 AUTHORIZE_TEXT = 'Войдите в свою учетную запись или зарегистрируйтесь.'
 RECIPE_NOT_FOUND = 'Рецепт не найден.'
 RECIPE_ALREADY = 'Рецепт уже в ваше{message_text}.'
@@ -32,5 +29,3 @@ SUBSCRIPTION_NOTFOUND = 'Подписка не существует.'
 AUTH_FAIL_TEXT = 'Неверный email или пароль.'
 
 HTTP_METHOD_NAMES = ('get', 'post', 'delete', 'patch')
-
-# PROJECT_URL = 'https://janedomain.ru/s/'

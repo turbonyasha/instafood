@@ -1,4 +1,4 @@
-MEASUREMENT_UNIT_ADMIN_TXT = 'Единица измерения'
+MEASUREMENT_UNIT_ADMIN_TXT = 'Мера измерения'
 FAVORITES_ADMIN_TXT = 'В избранном'
 
 VALID_EMPTY = 'Поле {field} не должно быть пустым!'
@@ -9,5 +9,16 @@ VALID_TIME = (
     'Минимальное время приготовления 1 минута, указано {cooking_time}.'
 )
 
-DEFAULT_TIME = 1
+DEFAULT_ONE = 1
 
+VALID_USERNAME = (
+    "Никнейм '{value}' содержит недопустимые символы. "
+    'Разрешены только буквы, цифры, подчеркивания, точки, @ и +.'
+)
+
+DATA_JOINED = "Все ингредиенты созданы, последний: {name}"
+DATA_FAIL = 'Ошибка при создании ингредиентов: возможно, есть дубликаты.'
+FAIL_FAIL = 'Файл {file} не найден.'
+JSON_FAIL = 'Ошибка в формате JSON в файле {file}.'
+
+NO_IMAGE = 'Нет изображения'

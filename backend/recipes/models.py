@@ -52,13 +52,13 @@ class Subscription(models.Model):
     user = models.ForeignKey(
         FoodgramUser,
         on_delete=models.CASCADE,
-        related_name='subscribers',  # subscriptions
+        related_name='subscribers',
         verbose_name='Пользователь'
     )
     author = models.ForeignKey(
         FoodgramUser,
         on_delete=models.CASCADE,
-        related_name='authors',  # subscribers
+        related_name='authors',
         null=True,
         verbose_name='Автор рецептов'
     )
@@ -164,22 +164,14 @@ class Recipe(models.Model):
     cooking_time = models.PositiveIntegerField(
         verbose_name='Время готовки (мин.)',
         null=False,
-        default=const.DEFAULT_TIME,
+        default=const.DEFAULT_ONE,
         blank=False,
-        validators=(MinValueValidator(1),)
+        validators=(MinValueValidator(const.DEFAULT_ONE),)
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Дата создания'
     )
-    # is_favorited = models.BooleanField(
-    #     default=False,
-    #     verbose_name='В избранном'
-    # )
-    # is_in_shopping_cart = models.BooleanField(
-    #     default=False,
-    #     verbose_name='В списке покупок'
-    # )
 
     class Meta:
         ordering = ('-pub_date',)
@@ -207,11 +199,11 @@ class RecipeIngredient(models.Model):
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        verbose_name='Ингридиент'
+        verbose_name='Продукт'
     )
     amount = models.PositiveIntegerField(
         verbose_name='Количество',
-        validators=(MinValueValidator(1),)
+        validators=(MinValueValidator(const.DEFAULT_ONE),)
     )
 
     class Meta:
@@ -225,22 +217,9 @@ class RecipeIngredient(models.Model):
             )
         ]
 
-    # @classmethod
-    # def update_or_create_recipeingredient(cls, recipe, ingredient, amount):
-    #     obj, created = cls.objects.update_or_create(
-    #         recipe=recipe,
-    #         ingredient=ingredient,
-    #         defaults={'amount': amount}
-    #     )
-    #     return obj, created
-
     def __str__(self):
         return (f'{self.amount} {self.ingredient.measurement_unit} '
                 f'{self.ingredient} в {self.recipe.name[:20]}')
-
-    # def save(self, *args, **kwargs):
-    #     self.clean()
-    #     super().save(*args, **kwargs)
 
 
 class BaseRecipeUserModel(models.Model):
@@ -288,32 +267,3 @@ class ShoppingCart(BaseRecipeUserModel):
     class Meta(BaseRecipeUserModel.Meta):
         verbose_name = 'рецепт в корзине'
         verbose_name_plural = 'Рецепты в корзине'
-
-
-# class RecipeTag(models.Model):
-#     """Связующая модель для рецептов и тегов."""
-#     recipe = models.ForeignKey(
-#         Recipe,
-#         on_delete=models.CASCADE,
-#         related_name='recipe_tags',
-#         verbose_name='Рецепт'
-#     )
-#     tag = models.ForeignKey(
-#         Tag,
-#         on_delete=models.CASCADE,
-#         related_name='tag_recipes',
-#         verbose_name='Тег'
-#     )
-
-#     class Meta:
-#         verbose_name = 'тег рецепта'
-#         verbose_name_plural = 'Теги рецептов'
-#         constraints = [
-#             models.UniqueConstraint(
-#                 fields=['recipe', 'tag'],
-#                 name='unique_tag_per_recipe'
-#             )
-#         ]
-
-#     def __str__(self):
-#         return f'{self.recipe.name}, метка {self.tag.name}'

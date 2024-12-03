@@ -1,33 +1,15 @@
 from collections import Counter
 
-from django.shortcuts import get_object_or_404
+from djoser.serializers import UserSerializer
 from rest_framework import serializers
 from django.core.validators import MinValueValidator
 from drf_extra_fields.fields import Base64ImageField
 
 import api.constants as const
-from recipes.models import (FavoriteRecipes, Ingredient, Recipe, RecipeIngredient,
-                     ShoppingCart, Tag)
-from djoser.serializers import UserCreateSerializer, UserSerializer
-from rest_framework import serializers
-from recipes.models import Recipe
-from recipes.models import FoodgramUser, Subscription
-
-
-# class UserIsSubscribedMixin:
-#     """Миксин для проверки подписки."""
-#     def get_is_subscribed(self, obj):
-#         user = self.context['request'].user
-#         if user.is_authenticated:
-#             if isinstance(obj, FoodgramUser):
-#                 return Subscription.objects.filter(
-#                     user=user, author=obj
-#                 ).exists()
-#             elif isinstance(obj, Subscription):
-#                 return Subscription.objects.filter(
-#                     user=user, author=obj.author
-#                 ).exists()
-#         return False
+from recipes.models import (
+    FavoriteRecipes, Ingredient, Recipe, RecipeIngredient,
+    ShoppingCart, Tag, FoodgramUser, Subscription
+)
 
 
 class FoodgramUserSerializer(UserSerializer):
@@ -37,36 +19,23 @@ class FoodgramUserSerializer(UserSerializer):
 
     class Meta:
         model = FoodgramUser
-        fields = (
-            'email',
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-            'is_subscribed',
-            'avatar'
+        fields = UserSerializer.Meta.fields + (
+            'first_name', 'last_name',
+            'is_subscribed', 'avatar'
         )
 
-
-# class CustomUserCreateSerializer(UserCreateSerializer):
-#     """Сериализатор для создания пользователя."""
-
-#     class Meta:
-#         model = FoodgramUser
-#         fields = (
-#             'email',
-#             'id',
-#             'username',
-#             'first_name',
-#             'last_name',
-#             'password'
-#         )
-
-
-# class CustomTokenCreateSerializer(serializers.Serializer):
-#     """Сериализатор для выдачи токенов."""
-#     email = serializers.EmailField(required=True)
-#     password = serializers.CharField(required=True)
+    def get_is_subscribed(self, obj):
+        user = self.context['request'].user
+        if user.is_authenticated:
+            if isinstance(obj, FoodgramUser):
+                return Subscription.objects.filter(
+                    user=user, author=obj
+                ).exists()
+            elif isinstance(obj, Subscription):
+                return Subscription.objects.filter(
+                    user=user, author=obj.author
+                ).exists()
+        return False
 
 
 class RecipesSubscriptionSerializer(serializers.ModelSerializer):
@@ -86,17 +55,24 @@ class AvatarSerializer(serializers.ModelSerializer):
 
 
 class SubscribtionSerializer(FoodgramUserSerializer):
+    id = serializers.IntegerField(source='author.id')
+    email = serializers.EmailField(source='author.email')
+    username = serializers.CharField(source='author.username')
+    first_name = serializers.CharField(source='author.first_name')
+    last_name = serializers.CharField(source='author.last_name')
+    is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
+    avatar = serializers.ImageField(source='author.avatar')
 
     class Meta(FoodgramUserSerializer.Meta):
         model = Subscription
         fields = FoodgramUserSerializer.Meta.fields + (
-            'recipes', 'recipes_count',
+            'recipes', 'recipes_count'
         )
 
-    def get_recipes_count(self, recipe):
-        return recipe.recipes_authors.all().count()
+    def get_recipes_count(self, subscribe):
+        return subscribe.author.recipes_authors.count()
 
     def get_recipes(self, obj):
         return RecipesSubscriptionSerializer(
@@ -141,11 +117,9 @@ class RecipeIngredientRetriveSerializer(serializers.ModelSerializer):
 
 class RecipeRetriveSerializer(serializers.ModelSerializer):
     """Сериализатор для чтения рецептов."""
-    # image = Base64ImageField()
     tags = TagSerializer(
         many=True,
         read_only=True,
-        
     )
     author = FoodgramUserSerializer()
     ingredients = RecipeIngredientRetriveSerializer(
@@ -245,7 +219,9 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     const.VALID_UNIQUE.format(
                         ids_name=ids_name, duplicates=[
-                            id for id, into in Counter(ids).items() if into > 1
+                            id for id, into in Counter(
+                                ids
+                            ).items() if into > const.DEFAULT_ONE
                         ]
                     )
                 )

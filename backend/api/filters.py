@@ -2,8 +2,7 @@ from django.contrib import admin
 from django_filters import rest_framework as filters
 from django.db.models import Count
 
-from recipes.models import Recipe, Tag
-from recipes.models import FoodgramUser
+from recipes.models import Recipe, Tag, FoodgramUser
 
 
 class RecipesFilterSet(filters.FilterSet):
@@ -58,8 +57,8 @@ class UserFilterSet(filters.FilterSet):
         user = self.request.user
         if value is not None:
             if value:
-                return queryset.filter(subscribers__user=user)
-            return queryset.exclude(subscribers__user=user)
+                return queryset.exclude(subscribers__user=user)
+            return queryset.filter(subscribers__user=user)
         return queryset
 
 

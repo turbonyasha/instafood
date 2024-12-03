@@ -1,48 +1,35 @@
-from collections import defaultdict
-from urllib.parse import urljoin
-
 from io import BytesIO
+
 from django.http import FileResponse
 from django.utils import timezone
-from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, status, viewsets
+from rest_framework import filters, status, viewsets, serializers
 from rest_framework.decorators import action
-from rest_framework.permissions import (
-    IsAuthenticated, IsAuthenticatedOrReadOnly, AllowAny
-)
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.db.models import Count, Exists, OuterRef
+from djoser.views import UserViewSet
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import (
+    IsAuthenticated, IsAuthenticatedOrReadOnly
+)
 
 from . import constants as const
 from api.filters import RecipesFilterSet, UserFilterSet
 from api.permissions import AdminOrSafeMethodPermission
 from api.utils import favorite_or_shopping_cart_action
-
-from recipes.models import (
-    FavoriteRecipes, Ingredient, Recipe, RecipeIngredient,
-    ShoppingCart, Tag
-)
 from api.serializers import (
     IngredientSerializer, RecipeWriteSerializer,
-    RecipeRetriveSerializer, TagSerializer
+    RecipeRetriveSerializer, TagSerializer,
+    RecipesSubscriptionSerializer,
+    FoodgramUserSerializer, SubscribtionSerializer
 )
-from django.db.models import Count, Exists, OuterRef
-from djoser.views import UserViewSet
-from rest_framework import permissions, serializers, status, viewsets
-from rest_framework.authtoken.models import Token
-from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
 from api.paginations import LimitPageNumberPagination
-
-from recipes.models import FoodgramUser, Subscription
-from api.serializers import (
-    FoodgramUserSerializer,
-    SubscribtionSerializer
-)
-from api.serializers import RecipesSubscriptionSerializer
 from api.utils import get_shoplist_text
+from recipes.models import (
+    FavoriteRecipes, Ingredient, Recipe,
+    ShoppingCart, Tag, FoodgramUser, Subscription
+)
 
 
 class FoodgramUserViewSet(UserViewSet):
@@ -52,23 +39,16 @@ class FoodgramUserViewSet(UserViewSet):
     pagination_class = LimitPageNumberPagination
     filterset_class = UserFilterSet
 
-    # def get_permissions(self):
-    #     if self.action in ['list', 'retrieve', 'create']:
-    #         return [AllowAny()]
-    #     if self.action in ['avatar', 'subscribe', 'subscriptions']:
-    #         return [IsAuthenticated()]
-    #     return [AdminOrSafeMethodPermission()]
-
     def get_queryset(self):
         queryset = self.queryset
         if self.request.user.is_anonymous:
             return queryset
-        subscribe = self.request.user.subscriptions.filter(
+        subscribe = self.request.user.subscribers.filter(
             author=OuterRef('pk')
         )
         queryset = queryset.annotate(
             is_subscribed_annotated=Exists(subscribe),
-            recipes_count=Count('recipe')
+            recipes_count=Count('recipes_authors')
         )
         return queryset
 
@@ -136,28 +116,6 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         instance.delete()
 
 
-# @api_view(['POST'])
-# @permission_classes([permissions.AllowAny])
-# def get_user_token(request):
-#     """Получение токена пользователя по email и паролю."""
-#     serializer = CustomTokenCreateSerializer(data=request.data)
-#     serializer.is_valid(raise_exception=True)
-#     try:
-#         user = FoodgramUser.objects.get(
-#             email=serializer.validated_data['email']
-#         )
-#     except FoodgramUser.DoesNotExist:
-#         raise ValidationError(const.AUTH_FAIL_TEXT)
-#     if not user.check_password(serializer.validated_data['password']):
-#         raise ValidationError(const.AUTH_FAIL_TEXT)
-#     token, created = Token.objects.get_or_create(user=user)
-
-#     return Response(
-#         {'auth_token': token.key},
-#         status=status.HTTP_200_OK
-#     )
-
-
 class RecipeViewSet(viewsets.ModelViewSet):
     """Представление для рецептов."""
     queryset = Recipe.objects.all()
@@ -205,18 +163,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return RecipeRetriveSerializer
         return RecipeWriteSerializer
 
-    # def create(self, request, *args, **kwargs):
-    #     self.permission_classes = [IsAuthorOrAdmin]
-    #     return super().create(request, *args, **kwargs)
-
-    # def update(self, request, *args, **kwargs):
-    #     self.permission_classes = [IsAuthorOrAdmin]
-    #     return super().update(request, *args, **kwargs)
-
-    # def destroy(self, request, *args, **kwargs):
-    #     self.permission_classes = [IsAuthorOrAdmin]
-    #     return super().destroy(request, *args, **kwargs)
-
     @action(detail=True, methods=['get'], url_path='get-link')
     def get_short_link(self, request, pk):
         """Возвращает короткую ссылку."""
@@ -231,10 +177,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk=None):
         """Реализует работу Избранного."""
         user = self.request.user
-        # tags = request.query_params.get('tags', None)
-        # queryset = Recipe.objects.filter(id=pk)
-        # if tags:
-        #     queryset = queryset.filter(tags__name__icontains=tags)
         return favorite_or_shopping_cart_action(
             request_method=self.request.method,
             model=FavoriteRecipes,

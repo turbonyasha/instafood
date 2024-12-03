@@ -19,6 +19,7 @@ def username_validator(value):
     regex = r'[\w.@+-]'
     if not re.match(regex, value):
         raise ValidationError(
-            f"Никнейм '{value}' содержит недопустимые символы. "
-            "Разрешены только буквы, цифры, подчеркивания, точки, @ и +."
+            const.VALID_USERNAME.format(
+                value=value
+            )
         )

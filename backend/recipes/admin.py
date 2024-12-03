@@ -34,8 +34,6 @@ class RecipeIngredientInline(admin.TabularInline):
 
 class TagInline(admin.TabularInline):
     """Инлайн форма для добавления тегов к рецепту."""
-    # изменить на связь без связующей модели
-    # накатить миграции после изменения бд
     model = Recipe.tags.through
     extra = 1
     fields = ('tag',)
@@ -100,7 +98,7 @@ class RecipeAdmin(admin.ModelAdmin):
                 f'<img src="{recipe.image.url}" '
                 f'style="max-width: 150px; max-height: 150px;">'
             )
-        return 'Нет изображения'
+        return const.NO_IMAGE
 
 
 @admin.register(Ingredient)
@@ -108,7 +106,6 @@ class IngredientAdmin(admin.ModelAdmin):
     """Админка для ингридиентов."""
     list_display = ('name', 'measurement_unit', 'usage_count')
     search_fields = ('name',)
-    # list_filter = ('measurement_unit', )
 
     @admin.display(description='Использование в рецептах')
     def usage_count(self, recipe):
@@ -143,7 +140,7 @@ class FoodgramUserAdmin(BaseUserAdmin):
                 f'<img src="{user.avatar.url}" '
                 f'style="max-width: 150px; max-height: 150px;">'
             )
-        return 'Нет изображения'
+        return const.NO_IMAGE
 
 
 admin.site.register(Subscription)

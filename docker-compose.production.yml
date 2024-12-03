@@ -2,6 +2,7 @@ volumes:
   pg_data:
   static:
   media:
+  docs:
 
 
 services:
@@ -32,5 +33,6 @@ services:
     volumes:
       - static:/static
       - media:/media
+      - ../docs:/usr/share/nginx/html/api/docs/
     depends_on:
       - backend

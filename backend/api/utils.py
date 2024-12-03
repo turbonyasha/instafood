@@ -2,7 +2,9 @@ from collections import defaultdict
 from datetime import datetime
 
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 
 import api.constants as const
 from recipes.models import Recipe
@@ -14,39 +16,26 @@ def favorite_or_shopping_cart_action(
 ):
     """Базовая функция для реализации Избранного и Корзины."""
     if not user.is_authenticated:
-        return Response(
-            {'detail': const.AUTHORIZE_TEXT},
-            status=status.HTTP_401_UNAUTHORIZED
-        )
+        raise ValidationError(const.AUTHORIZE_TEXT)
     try:
         recipe = Recipe.objects.get(pk=recipe_pk)
     except Recipe.DoesNotExist:
-        return Response(
-            {'detail': const.RECIPE_NOT_FOUND},
-            status=status.HTTP_404_NOT_FOUND
-        )
+        raise ValidationError(const.RECIPE_NOT_FOUND)
     if request_method == 'POST':
         if model.objects.filter(user=user, recipe=recipe).exists():
-            return Response({'detail': const.RECIPE_ALREADY.format(
+            raise ValidationError(const.RECIPE_ALREADY.format(
                 message_text=message_text
-            )}, status=status.HTTP_400_BAD_REQUEST)
+            ))
         model.objects.create(user=user, recipe=recipe)
         serializer = RecipesSubscriptionSerializer(
             recipe, context={'user': user}
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    if request_method == 'DELETE':
-        try:
-            model_object = model.objects.get(user=user, recipe=recipe)
-            model_object.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except model.DoesNotExist:
-            return Response({'detail': const.RECIPE_NOT_IN.format(
-                message_text=message_text
-            )}, status=status.HTTP_404_NOT_FOUND)
+    get_object_or_404(model, user=user, recipe=recipe).delete()
 
 
 def get_shoplist_text(in_cart_recipes):
+    """Функция для формирования текстового списка покупок."""
     ingredients_summary = defaultdict(int)
     ingredients = {}
     recipes_names = []

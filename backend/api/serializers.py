@@ -231,7 +231,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         ingredients_to_create = []
         ingredients_to_update = []
         existing_ingredients = {
-            (recipe.ingredient.id): recipeigredient 
+            (recipe.ingredient.id): recipeigredient
             for recipeigredient in RecipeIngredient.objects.filter(
                 recipe=recipe
             )

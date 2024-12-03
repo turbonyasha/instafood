@@ -116,7 +116,9 @@ class IngredientAdmin(admin.ModelAdmin):
 @admin.register(FoodgramUser)
 class FoodgramUserAdmin(BaseUserAdmin):
     search_fields = ('first_name', 'last_name', 'username', 'email')
-    list_display = ('username', 'email', 'first_name', 'last_name', 'is_active')
+    list_display = (
+        'username', 'email', 'first_name', 'last_name', 'is_active'
+    )
     readonly_fields = ('password', 'avatar_preview')
 
     fieldsets = (

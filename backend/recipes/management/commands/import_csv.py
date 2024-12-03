@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand
 from django.db import models
 from django.shortcuts import get_object_or_404
 
+from recipes import constants as const
 from recipes.models import Ingredient
 
 HELP = 'Импорт данных из CSV-файлов для Foodgram.'
@@ -53,9 +54,13 @@ class Command(BaseCommand):
                 try:
                     Ingredient.objects.bulk_create(ingredients)
                     self.stdout.write(self.style.SUCCESS(
-                        f"Все ингредиенты созданы, последний: {data['name']}"))
+                        const.DATA_JOINED.format(
+                            name=data['name']
+                        )))
                 except IntegrityError:
                     self.stdout.write(self.style.ERROR(
-                        'Ошибка создания ингредиентов: Возможно, присутствуют дубли.'))
+                        const.DATA_FAIL))
         except FileNotFoundError:
-            self.stdout.write(self.style.ERROR(f"Файл {path} не найден."))
+            self.stdout.write(self.style.ERROR(
+                const.FAIL_FAIL.format(file=path)
+            ))

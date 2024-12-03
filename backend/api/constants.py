@@ -7,7 +7,7 @@ RECIPE_ALREADY = 'Рецепт уже в ваше{message_text}.'
 RECIPE_NOT_IN = 'Рецепт не в ваше{message_text}.'
 
 VALID_INGREDIENT = 'Ингредиент {ingredient} не существует!'
-VALID_UNIQUE = '{ids_name} не могут повторяться.'
+VALID_UNIQUE = 'Эти {ids_name} не могут повторяться: {duplicates}'
 VALID_SUBSCRIBE = 'Вы не можете подписаться на самого себя.'
 
 INGREDIENTS = 'Ингредиенты'
@@ -17,9 +17,12 @@ COOKING_TIME = 'Время готовки'
 
 FAVORITE_VIEW = 'м Избранном'
 SHOPPING_CART_VIEW = 'й Корзине'
-FILE_HEADER = 'Список покупок для рецептов: {file_header}'
-FILE_ROW = '▢ {ingredient}: {amount} {measurement_unit}'
-FILENAME = 'shopping_cart'
+
+FILE_HEADER = ('Список покупок для рецептов: '
+               '{file_header}. Дата создания: {date}')
+FILE_ROW = '▢ {index}. {name} - {amount} {measurement_unit}'
+FILE_NAME = "shopping_list_{unique_name}.txt"
+
 
 USER_NOT_FOUND = 'Пользователь не найден.'
 SUBSCRIBTION_MYSELF = 'Вы не можете подписаться на самого себя.'
@@ -27,5 +30,7 @@ SUBSCRIBTION_ALREADY = 'Вы уже подписаны на этого поль�
 SUBSCRIPTION_NOTFOUND = 'Подписка не существует.'
 
 AUTH_FAIL_TEXT = 'Неверный email или пароль.'
+
+HTTP_METHOD_NAMES = ('get', 'post', 'delete', 'patch')
 
 # PROJECT_URL = 'https://janedomain.ru/s/'

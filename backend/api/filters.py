@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django_filters import rest_framework as filters
+from django.db.models import Count
+
 from recipes.models import Recipe, Tag
 from recipes.models import FoodgramUser
 
@@ -74,4 +76,21 @@ class TagFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         if self.value():
             return queryset.filter(recipe__tags__id=self.value())
+        return queryset
+
+
+class AuthorFilter(admin.SimpleListFilter):
+    title = 'Автор'
+    parameter_name = 'author'
+
+    def lookups(self, request, model_admin):
+        authors_recipes = Recipe.objects.values('author').annotate(
+            recipes_number=Count('author')).filter(recipes_number__gt=0)
+        return [(author['author'], FoodgramUser.objects.get(
+            id=author['author']
+        ).username) for author in authors_recipes]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(author__id=self.value())
         return queryset

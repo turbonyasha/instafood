@@ -9,4 +9,5 @@ VALID_TIME = (
     'Минимальное время приготовления 1 минута, указано {cooking_time}.'
 )
 
-HTTP_METHOD_NAMES = ('get', 'post', 'delete', 'patch')
+DEFAULT_TIME = 1
+

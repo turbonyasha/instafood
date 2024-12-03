@@ -1,14 +1,15 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 from django.contrib.auth.models import Group
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth import get_user_model
 
 from . import constants as const
-
 from .models import (
     FavoriteRecipes, Ingredient, Recipe, RecipeIngredient,
-    RecipeTag, ShoppingCart, Tag, FoodgramUser, Subscription
+    ShoppingCart, Tag, FoodgramUser, Subscription
 )
+from api.filters import AuthorFilter, TagFilter
 
 user = get_user_model()
 
@@ -31,12 +32,14 @@ class RecipeIngredientInline(admin.TabularInline):
         return None
 
 
-class RecipeTagInline(admin.TabularInline):
+class TagInline(admin.TabularInline):
     """Инлайн форма для добавления тегов к рецепту."""
-    model = RecipeTag
+    # изменить на связь без связующей модели
+    # накатить миграции после изменения бд
+    model = Recipe.tags.through
     extra = 1
     fields = ('tag',)
-    list_filter = ('tags',)
+    list_filter = (TagFilter,)
 
 
 @admin.register(Recipe)
@@ -48,8 +51,8 @@ class RecipeAdmin(admin.ModelAdmin):
         'ingredients_list', 'tags_list', 'image'
     )
     search_fields = ('name', 'author__username')
-    list_filter = ('pub_date', 'tags')
-    inlines = [RecipeIngredientInline, RecipeTagInline]
+    list_filter = ('pub_date', TagFilter, AuthorFilter)
+    inlines = [RecipeIngredientInline, TagInline]
     readonly_fields = ('image_preview',)
 
     fieldsets = (
@@ -61,15 +64,22 @@ class RecipeAdmin(admin.ModelAdmin):
         }),
     )
 
+    def get_author_filter(self, request):
+        authors = Recipe.objects.values_list('author', flat=True).distinct()
+        return [(
+                author.id,
+                author.get_full_name()
+                ) for author in FoodgramUser.objects.filter(id__in=authors)]
+
     @admin.display(description=const.FAVORITES_ADMIN_TXT)
     def favorited_count(self, recipe):
         """Метод для подсчета общего количества добавлений в избранное."""
-        return FavoriteRecipes.objects.filter(recipe=recipe).count()
+        return recipe.favoriterecipess.count()
 
     @mark_safe
     @admin.display(description='Продукты')
     def ingredients_list(self, recipe):
-        """Отображаем список продуктов, связанных с рецептом."""
+        """Отображение списка продуктов, связанных с рецептом."""
         return mark_safe(', '.join([
             ingredient.name for ingredient in recipe.ingredients.all()
         ]))
@@ -77,14 +87,14 @@ class RecipeAdmin(admin.ModelAdmin):
     @mark_safe
     @admin.display(description='Метки')
     def tags_list(self, recipe):
-        """Отображаем список тегов, связанных с рецептом."""
+        """Отображение списка тегов, связанных с рецептом."""
         tags = recipe.tags.all()
         return mark_safe(', '.join([tag.name for tag in tags]))
 
     @mark_safe
     @admin.display(description='Текущая картинка рецепта')
     def image_preview(self, recipe):
-        """Отображаем изображение на странице редактирования рецепта."""
+        """Отображение картинки на странице редактирования рецепта."""
         if recipe.image:
             return mark_safe(
                 f'<img src="{recipe.image.url}" '
@@ -96,17 +106,31 @@ class RecipeAdmin(admin.ModelAdmin):
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     """Админка для ингридиентов."""
-    list_display = ('name', 'measurement_unit')
+    list_display = ('name', 'measurement_unit', 'usage_count')
     search_fields = ('name',)
+    # list_filter = ('measurement_unit', )
+
+    @admin.display(description='Использование в рецептах')
+    def usage_count(self, recipe):
+        """Метод для подсчета общего количества добавлений в избранное."""
+        return recipe.recipe_ingredients.count()
 
 
-class FoodgramUserAdmin(admin.ModelAdmin):
+@admin.register(FoodgramUser)
+class FoodgramUserAdmin(BaseUserAdmin):
     search_fields = ('first_name', 'last_name', 'username', 'email')
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_active')
+    readonly_fields = ('password', 'avatar_preview')
 
     fieldsets = (
-        (None, {
-            'fields': '__all__'
-        }),
+        (None, {'fields': ('username', 'password')}),
+        ('ИНФОРМАЦИЯ О ПОЛЬЗОВАТЕЛЕ', {'fields': (
+            'first_name', 'last_name', 'email'
+        )}),
+        ('РАЗРЕШЕНИЯ', {'fields': (
+            'is_active', 'is_staff', 'is_superuser', 'user_permissions'
+        )}),
+        ('СТАТИСТИКА', {'fields': ('last_login', 'date_joined')}),
         ('АВАТАР ПОЛЬЗОВАТЕЛЯ', {
             'fields': ('avatar', 'avatar_preview',)
         }),
@@ -115,11 +139,13 @@ class FoodgramUserAdmin(admin.ModelAdmin):
     @mark_safe
     def avatar_preview(self, user):
         if user.avatar:
-            return mark_safe(f'<img src="{user.avatar.url}" style="max-width: 150px; max-height: 150px;">')
+            return mark_safe(
+                f'<img src="{user.avatar.url}" '
+                f'style="max-width: 150px; max-height: 150px;">'
+            )
         return 'Нет изображения'
 
 
-admin.site.register(FoodgramUser)
 admin.site.register(Subscription)
 admin.site.register(Tag)
 admin.site.register(FavoriteRecipes)

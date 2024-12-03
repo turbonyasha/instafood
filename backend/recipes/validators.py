@@ -1,3 +1,5 @@
+import re
+
 from django.core.exceptions import ValidationError
 from . import constants as const
 
@@ -9,4 +11,14 @@ def validate_empty(field):
             const.VALID_EMPTY.format(
                 field=field
             )
+        )
+
+
+def username_validator(value):
+    """Валидация для username с регулярным выражением."""
+    regex = r'[\w.@+-]'
+    if not re.match(regex, value):
+        raise ValidationError(
+            f"Никнейм '{value}' содержит недопустимые символы. "
+            "Разрешены только буквы, цифры, подчеркивания, точки, @ и +."
         )

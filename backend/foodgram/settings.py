@@ -10,10 +10,12 @@ load_dotenv()
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
+DEBUG = os.getenv('DEBUG')
 
-DEBUG = False
-
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+if DEBUG:
+    ALLOWED_HOSTS = ['*']
+else:
+    ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 
 INSTALLED_APPS = [
@@ -27,8 +29,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'djoser',
     'recipes.apps.RecipesConfig',
-    'users.apps.UsersConfig',
-    'core.apps.CoreConfig',
+    'api.apps.ApiConfig',
     'django_filters',
     'corsheaders',
 ]
@@ -65,16 +66,24 @@ TEMPLATES = [
 WSGI_APPLICATION = 'foodgram.wsgi.application'
 
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB', 'django'),
-        'USER': os.getenv('POSTGRES_USER', 'django'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', ''),
-        'PORT': os.getenv('DB_PORT', 5432),
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('POSTGRES_DB', 'django'),
+            'USER': os.getenv('POSTGRES_USER', 'django'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', ''),
+            'PORT': os.getenv('DB_PORT', 5432),
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -107,11 +116,15 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'collected_static'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/media'
+
+if DEBUG:
+    MEDIA_ROOT = BASE_DIR / 'media'
+else:
+    MEDIA_ROOT = '/media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'users.FoodgramUser'
+AUTH_USER_MODEL = 'recipes.FoodgramUser'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -126,16 +139,16 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
 
-    'DEFAULT_PAGINATION_CLASS': 'core.paginations.LimitPageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': 'api.paginations.LimitPageNumberPagination',
     'PAGE_SIZE': 10,
 }
 
 DJOSER = {
     'USER_CREATE_PASSWORD_RETYPE': False,
     'SERIALIZERS': {
-        'user': 'users.serializers.CustomUserSerializer',
-        'user_create': 'users.serializers.CustomUserCreateSerializer',
-        'current_user': 'users.serializers.CustomUserSerializer',
+        'user': 'api.serializers.FoodgramUserSerializer',
+        'user_create': 'djoser.serializers.UserCreateSerializer',
+        'current_user': 'api.serializers.FoodgramUserSerializer',
     },
 }
 

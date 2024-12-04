@@ -1,4 +1,4 @@
-Проект доступен по адресу https://janedomain.ru/
+Проект доступен по адресу [https://janedomain.ru/](https://janedomain.ru/)
 
 ![example workflow](https://github.com/turbonyasha/foodgram/actions/workflows/main.yml/badge.svg)
 
@@ -21,12 +21,12 @@
 «Фудграм» — сайт, на котором пользователи могут публиковать свои рецепты, добавлять чужие рецепты в избранное и подписываться на публикации других авторов. Зарегистрированным пользователям также доступен сервис «Список покупок». Он позволит создавать список продуктов, которые нужно купить для приготовления выбранных блюд.
 
 ## ◑ API проекта
-Полная API спецификация проекта доступна по эндпоинту /api/docs/ в формате Redoc.
+Полная API спецификация проекта доступна по эндпоинту [/api/docs/](https://janedomain.ru/api/docs/) в формате Redoc.
 
 ## ◑ Развернуть проект Foodgram на своем сервере
 ### 1. Клонируйте репозиторий и перейдите в него в терминале:
 ```
-git@github.com:turbonyasha/kittygram_final.git
+git clone git@github.com:turbonyasha/foodgram.git
 cd kittygram_final
 ```
 
@@ -132,5 +132,5 @@ TELEGRAM_BOT_TOKEN        # токен вашего бота в Telegram
 
 ## ◑ Автор проекта
 [Женя Скуратова]
-- github turbonyasha
-- telegram @janedoel
+- github [turbonyasha](https://github.com/turbonyasha)
+- telegram [@janedoel](https://t.me/janedoel)

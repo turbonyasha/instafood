@@ -172,3 +172,5 @@ CORS_ALLOW_HEADERS = [
     'Accept',
     'Origin',
 ]
+
+MIN_VALUE = 1

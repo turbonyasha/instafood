@@ -16,7 +16,7 @@ from rest_framework.permissions import (
 
 from . import constants as const
 from api.filters import RecipesFilterSet, UserFilterSet
-from api.permissions import AdminOrSafeMethodPermission
+from api.permissions import SafeMethodPermission
 from api.utils import favorite_or_shopping_cart_action
 from api.serializers import (
     IngredientSerializer, RecipeWriteSerializer,
@@ -94,6 +94,9 @@ class FoodgramUserViewSet(UserViewSet):
 
 class SubscriptionViewSet(viewsets.ModelViewSet):
     """Представление для списка подписок"""
+    queryset = Subscription.objects.annotate(
+        recipes_count=Count('author__recipes_authors')
+    )
     serializer_class = SubscribtionSerializer
     permission_classes = [IsAuthenticated]
 
@@ -226,7 +229,7 @@ class TagsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     pagination_class = None
-    permission_classes = [AdminOrSafeMethodPermission]
+    permission_classes = [SafeMethodPermission]
 
 
 class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
@@ -236,4 +239,4 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
-    permission_classes = [AdminOrSafeMethodPermission]
+    permission_classes = [SafeMethodPermission]

@@ -9,7 +9,6 @@ from .models import (
     FavoriteRecipes, Ingredient, Recipe, RecipeIngredient,
     ShoppingCart, Tag, FoodgramUser, Subscription
 )
-from api.filters import AuthorFilter, TagFilter
 
 user = get_user_model()
 
@@ -37,7 +36,7 @@ class TagInline(admin.TabularInline):
     model = Recipe.tags.through
     extra = 1
     fields = ('tag',)
-    list_filter = (TagFilter,)
+    raw_id_fields = ('tag',)
 
 
 @admin.register(Recipe)
@@ -49,7 +48,7 @@ class RecipeAdmin(admin.ModelAdmin):
         'ingredients_list', 'tags_list', 'image'
     )
     search_fields = ('name', 'author__username')
-    list_filter = ('pub_date', TagFilter, AuthorFilter)
+    list_filter = ('pub_date', 'tags', 'author')
     inlines = [RecipeIngredientInline, TagInline]
     readonly_fields = ('image_preview',)
 

@@ -7,7 +7,7 @@ from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
 import api.constants as const
-from foodgram.settings import MIN_VALUE
+from foodgram.settings import DEFAULT
 from recipes.models import (
     FavoriteRecipes, Ingredient, Recipe, RecipeIngredient,
     ShoppingCart, Tag, FoodgramUser, Subscription
@@ -68,6 +68,15 @@ class SubscribtionSerializer(FoodgramUserSerializer):
         fields = FoodgramUserSerializer.Meta.fields + (
             'recipes', 'recipes_count'
         )
+
+    def validate(self, data):
+        user = self.context['request'].user
+        author = data['author']
+        if user == author:
+            raise serializers.ValidationError(const.SUBSCRIBTION_MYSELF)
+        if Subscription.objects.filter(user=user, author=author).exists():
+            raise serializers.ValidationError(const.SUBSCRIBTION_ALREADY)
+        return data
 
     def get_recipes(self, obj):
         return RecipesSubscriptionSerializer(
@@ -159,7 +168,7 @@ class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
     """Сериализатор для создания и обновления связи рецепта и ингридиента."""
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     amount = serializers.IntegerField(
-        validators=[MinValueValidator(MIN_VALUE)]
+        validators=[MinValueValidator(DEFAULT)]
     )
 
     class Meta:
@@ -177,7 +186,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         many=True,
         queryset=Tag.objects.all())
     cooking_time = serializers.IntegerField(
-        validators=[MinValueValidator(MIN_VALUE)]
+        validators=[MinValueValidator(DEFAULT)]
     )
 
     class Meta:

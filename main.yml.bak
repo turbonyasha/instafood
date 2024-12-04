@@ -115,6 +115,8 @@ jobs:
             sudo echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
             sudo echo "ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}" >> .env
             sudo echo "DEBUG=${{ secrets.DEBUG }}" >> .env
+            sudo echo "USE_SQLITE=${{ secrets.USE_SQLITE }}" >> .env
+            sudo echo "PROJECT_URL=${{ secrets.PROJECT_URL }}" >> .env
       - name: SSH commands to deploy
         uses: appleboy/ssh-action@master
         with:

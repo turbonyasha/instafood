@@ -29,3 +29,5 @@ SUBSCRIPTION_NOTFOUND = 'Подписка не существует.'
 AUTH_FAIL_TEXT = 'Неверный email или пароль.'
 
 HTTP_METHOD_NAMES = ('get', 'post', 'delete', 'patch')
+
+FOR_RECIPES = 'Для рецептов: '

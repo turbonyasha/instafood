@@ -12,10 +12,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 DEBUG = os.getenv('DEBUG')
 
-if DEBUG:
-    ALLOWED_HOSTS = ['*']
-else:
-    ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 
 
 INSTALLED_APPS = [
@@ -28,10 +25,10 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_framework',
     'djoser',
-    'recipes.apps.RecipesConfig',
-    'api.apps.ApiConfig',
     'django_filters',
     'corsheaders',
+    'recipes.apps.RecipesConfig',
+    'api.apps.ApiConfig',
 ]
 
 MIDDLEWARE = [
@@ -66,7 +63,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'foodgram.wsgi.application'
 
 
-if DEBUG:
+if os.getenv('USE_SQLITE', 'False'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -153,7 +150,7 @@ DJOSER = {
 }
 
 CORS_ALLOWED_ORIGINS = [
-    'https://janedomain.ru',
+    os.getenv('PROJECT_URL', 'localhost:3000'),
 ]
 
 CORS_ALLOW_METHODS = [
@@ -173,4 +170,4 @@ CORS_ALLOW_HEADERS = [
     'Origin',
 ]
 
-MIN_VALUE = 1
+DEFAULT = 1

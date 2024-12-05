@@ -18,18 +18,23 @@ class Command(BaseCommand):
         file_paths = [
             (
                 os.path.join(settings.BASE_DIR, 'data', 'ingredients.json'),
-                Ingredient
+                Ingredient, const.INGREDIENTS
             ),
-            (os.path.join(settings.BASE_DIR, 'data', 'tags.json'), Tag),
+            (
+                os.path.join(settings.BASE_DIR, 'data', 'tags.json'),
+                Tag, const.TAGS
+            ),
         ]
-        for file, model in file_paths:
+        for file, model, name in file_paths:
             try:
                 with open(file, 'r', encoding='utf-8') as f:
                     file_data = json.load(f)
                     data = [model(**row) for row in file_data]
                     model.objects.bulk_create(data, ignore_conflicts=True)
                     self.stdout.write(self.style.SUCCESS(
-                        const.DATA_JOINED.format(name=file)
+                        const.DATA_JOINED.format(
+                            name=name
+                        )
                     ))
             except (FileNotFoundError, json.JSONDecodeError) as e:
                 self.stdout.write(self.style.ERROR(

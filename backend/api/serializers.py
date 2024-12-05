@@ -1,5 +1,4 @@
 from collections import Counter
-from django.db.models import Count
 
 from django.core.validators import MinValueValidator
 from djoser.serializers import UserSerializer
@@ -27,11 +26,15 @@ class FoodgramUserSerializer(UserSerializer):
             'is_subscribed', 'avatar'
         )
 
-    def get_is_subscribed(self, author):
+    def get_is_subscribed(self, subscription):
         user = self.context['request'].user
         if user.is_authenticated:
+            if isinstance(subscription, Subscription):
+                return Subscription.objects.filter(
+                    user=user, author=subscription.author
+                ).exists()
             return Subscription.objects.filter(
-                user=user, author=author
+                user=user, author=subscription
             ).exists()
         return False
 
@@ -60,7 +63,7 @@ class SubscribtionSerializer(FoodgramUserSerializer):
     last_name = serializers.CharField(source='author.last_name')
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.IntegerField(source='recipes_count')
+    recipes_count = serializers.IntegerField(required=False)
     avatar = serializers.ImageField(source='author.avatar')
 
     class Meta(FoodgramUserSerializer.Meta):
@@ -77,6 +80,9 @@ class SubscribtionSerializer(FoodgramUserSerializer):
         if Subscription.objects.filter(user=user, author=author).exists():
             raise serializers.ValidationError(const.SUBSCRIBTION_ALREADY)
         return data
+
+    def get_recipes_count(self, author):
+        return author.recipes_count
 
     def get_recipes(self, obj):
         return RecipesSubscriptionSerializer(

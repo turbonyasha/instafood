@@ -1,12 +1,10 @@
 from django.shortcuts import redirect
-from django.shortcuts import get_object_or_404
+from django.urls import reverse
 
 from recipes.models import Recipe
 
 
-def redirect_to_recipe(request, short_link):
+def redirect_to_recipe(request, recipe_id):
     """Реализует перенаправление с короткой ссылки."""
-    recipe = get_object_or_404(
-        Recipe, id=int(short_link)
-    )
-    return redirect(recipe.get_absolute_url())
+    if Recipe.objects.filter(id=int(recipe_id)).exists():
+        return redirect(reverse('api:recipes-detail', args=[recipe_id]))

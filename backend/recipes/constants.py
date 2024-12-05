@@ -1,12 +1,17 @@
+from django.conf import settings
+
+
 MEASUREMENT_UNIT_ADMIN_TXT = 'Мера измерения'
 FAVORITES_ADMIN_TXT = 'В избранном'
 
 VALID_EMPTY = 'Поле {field} не должно быть пустым!'
 VALID_AMOUNT = (
-    'Количество ингридиентов должно быть не менее 1, указано {amount}.'
+    'Количество продуктов должно быть не '
+    'менее {settings.DEFAULT}, указано {amount}.'
 )
 VALID_TIME = (
-    'Минимальное время приготовления 1 минута, указано {cooking_time}.'
+    'Минимальное время приготовления {settings.DEFAULT}'
+    'минута, указано {cooking_time}.'
 )
 
 DEFAULT_ONE = 1
@@ -16,9 +21,14 @@ VALID_USERNAME = (
     'Разрешены только буквы, цифры, подчеркивания, точки, @ и +.'
 )
 
-DATA_JOINED = "Все ингредиенты созданы, последний: {name}"
+DATA_JOINED = 'Все {name} созданы.'
 DATA_FAIL = 'Ошибка при создании ингредиентов: возможно, есть дубликаты.'
 FAIL_FAIL = 'Файл {file} не найден.'
 FORMAT_FAIL = 'Ошибка при обработке файла {file}: {e}'
 
 NO_IMAGE = 'Нет изображения'
+
+INGREDIENTS = 'продукты'
+TAGS = 'метки'
+
+USERNAME_VALIDATION_PATTERN = r'^[a-zA-Z0-9][a-zA-Z0-9._+-]*$'

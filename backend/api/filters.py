@@ -1,5 +1,3 @@
-from django.contrib import admin
-from django.db.models import Count
 from django_filters import rest_framework as filters
 
 from recipes.models import Recipe, Tag, FoodgramUser
@@ -54,36 +52,3 @@ class UserFilterSet(filters.FilterSet):
         if value:
             return queryset.exclude(subscribers__user=user)
         return queryset
-
-
-# class TagFilter(admin.SimpleListFilter):
-#     """Расширенный фильтр для админки для поиска по тегам."""
-
-#     title = 'Метка'
-#     parameter_name = 'tag'
-
-#     def lookups(self, request, model_admin):
-#         tags = Tag.objects.all()
-#         return [(tag.id, tag.name) for tag in tags]
-
-#     def queryset(self, request, queryset):
-#         if self.value():
-#             return queryset.filter(recipe__tags__id=self.value())
-#         return queryset
-
-
-# class AuthorFilter(admin.SimpleListFilter):
-#     title = 'Автор'
-#     parameter_name = 'author'
-
-#     def lookups(self, request, model_admin):
-#         authors_recipes = Recipe.objects.values('author').annotate(
-#             recipes_number=Count('author')).filter(recipes_number__gt=0)
-#         return [(author['author'], FoodgramUser.objects.get(
-#             id=author['author']
-#         ).username) for author in authors_recipes]
-
-#     def queryset(self, request, queryset):
-#         if self.value():
-#             return queryset.filter(author__id=self.value())
-#         return queryset

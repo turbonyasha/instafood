@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.db.models import Count, Exists, OuterRef
-from rest_framework import filters, status, viewsets, serializers
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
@@ -15,7 +15,7 @@ from djoser.views import UserViewSet
 from . import constants as const
 from api.filters import RecipesFilterSet, UserFilterSet
 from api.permissions import SafeMethodPermission
-from api.utils import favorite_or_shopping_cart_action, get_shoplist_text
+from api.utils import get_shoplist_text
 from api.serializers import (
     IngredientSerializer, RecipeWriteSerializer, RecipeRetriveSerializer,
     TagSerializer, RecipesSubscriptionSerializer, FoodgramUserSerializer,
@@ -94,14 +94,13 @@ class FoodgramUserViewSet(UserViewSet):
 
 class SubscriptionViewSet(viewsets.ModelViewSet):
     """Представление для списка подписок"""
-    queryset = Subscription.objects.annotate(
-        recipes_count=Count('author__recipes_authors')
-    )
     serializer_class = SubscribtionSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return self.request.user.subscribers.all()
+        return Subscription.objects.annotate(
+            recipes_count=Count('author__recipes_authors')
+        ).filter(user=self.request.user)
 
     def perform_destroy(self, instance):
         instance.delete()
@@ -133,9 +132,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return queryset
 
     def _favorite_or_shopping_cart_action(
-        request_method, model, user, recipe_pk, message_text
+            self, request, model, user, recipe_pk
     ):
         recipe = get_object_or_404(Recipe, pk=recipe_pk)
+        request_method = request.method
         if request_method == 'POST':
             model.objects.get_or_create(user=user, recipe=recipe)
             return Response(RecipesSubscriptionSerializer(
@@ -156,7 +156,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='get-link')
     def get_short_link(self, request, pk):
         """Возвращает короткую ссылку."""
-        if not Recipe.objects.filter(pk=pk).exists():
+        if Recipe.objects.filter(pk=pk).exists():
             short_link = str(pk)
         return Response(
             {'short-link': request.build_absolute_uri(
@@ -170,23 +170,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post', 'delete'], url_path='favorite')
     def favorite(self, request, pk=None):
         """Реализует работу Избранного."""
-        return favorite_or_shopping_cart_action(
-            request_method=self.request.method,
+        return self._favorite_or_shopping_cart_action(
+            request=request,
             model=FavoriteRecipes,
-            user=self.request.user,
+            user=request.user,
             recipe_pk=pk,
-            message_text=const.FAVORITE_VIEW
         )
 
     @action(detail=True, methods=['post', 'delete'], url_path='shopping_cart')
     def shopping_cart(self, request, pk=None):
         """Реализует работу Корзины."""
-        return favorite_or_shopping_cart_action(
-            request_method=self.request.method,
+        return self._favorite_or_shopping_cart_action(
+            request=request,
             model=ShoppingCart,
-            user=self.request.user,
+            user=request.user,
             recipe_pk=pk,
-            message_text=const.SHOPPING_CART_VIEW
         )
 
     @action(
@@ -203,15 +201,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
         ingredients = {}
         ingredients_summary = {}
         for cart_item in in_cart_recipes:
-            for ingredient in cart_item.recipe.ingredients.all():
-                ingredient_name = ingredient.name
+            for recipe_ingredient in cart_item.recipe.recipe_ingredients.all():
+                ingredient_name = recipe_ingredient.ingredient
                 if ingredient_name not in ingredients:
-                    ingredients[ingredient_name] = ingredient
+                    ingredients[ingredient_name] = ingredient_name
                 ingredients_summary[ingredient_name] = ingredients_summary.get(
                     ingredient_name, 0
-                ) + ingredient.amount
+                ) + recipe_ingredient.amount
         return FileResponse(
-            get_shoplist_text(),
+            get_shoplist_text(
+                in_cart_recipes,
+                ingredients,
+                ingredients_summary
+            ),
             as_attachment=True,
             filename=const.FILE_NAME.format(
                 unique_name=timezone.now().strftime('%Y-%m-%d_%H-%M-%S')

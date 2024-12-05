@@ -43,6 +43,7 @@ npm -v
 npm i
 npm run start
 ```
+### 3. Настройте и запустите /backend:
 Cоздайте в директории /foodgram файл .env со следующими данными:
 ```
 DB_NAME=foodgram                         # Название базы данных

@@ -191,3 +191,4 @@ TELEGRAM_BOT_TOKEN        # токен вашего бота в Telegram
 [Женя Скуратова]
 - github [turbonyasha](https://github.com/turbonyasha)
 - telegram [@janedoel](https://t.me/janedoel)
+

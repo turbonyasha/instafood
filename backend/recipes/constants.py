@@ -1,6 +1,3 @@
-from django.conf import settings
-
-
 MEASUREMENT_UNIT_ADMIN_TXT = 'Мера измерения'
 FAVORITES_ADMIN_TXT = 'В избранном'
 

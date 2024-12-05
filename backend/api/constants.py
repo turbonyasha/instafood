@@ -15,8 +15,7 @@ COOKING_TIME = 'Время готовки'
 FAVORITE_VIEW = 'м Избранном'
 SHOPPING_CART_VIEW = 'й Корзине'
 
-FILE_HEADER = ('Список покупок для рецептов: '
-               '{file_header}. Дата создания: {date}')
+FILE_HEADER = ('Список покупок. Дата создания: {date}')
 FILE_ROW = '▢ {index}. {name} - {amount} {measurement_unit}'
 FILE_NAME = "shopping_list_{unique_name}.txt"
 
@@ -29,3 +28,5 @@ SUBSCRIPTION_NOTFOUND = 'Подписка не существует.'
 AUTH_FAIL_TEXT = 'Неверный email или пароль.'
 
 HTTP_METHOD_NAMES = ('get', 'post', 'delete', 'patch')
+
+FOR_RECIPES = 'Для рецептов: '

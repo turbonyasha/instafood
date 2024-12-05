@@ -1,6 +1,5 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.urls import reverse
 from django.core.validators import MinValueValidator
 
 from . import constants as const
@@ -64,6 +63,7 @@ class Subscription(models.Model):
     )
 
     class Meta:
+        ordering = ('user',)
         verbose_name = 'подписка'
         verbose_name_plural = 'Подписки'
         constraints = [
@@ -180,9 +180,6 @@ class Recipe(models.Model):
 
     def __str__(self):
         return f'{self.name[:30]}, автор {self.author}'
-
-    def get_absolute_url(self):
-        return reverse('recipes-detail', args=[self.pk])
 
 
 class RecipeIngredient(models.Model):

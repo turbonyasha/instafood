@@ -1,0 +1,42 @@
+[
+    {
+        "name": "Vegetarian",
+        "slug": "vegetarian"
+    },
+    {
+        "name": "Vegan",
+        "slug": "vegan"
+    },
+    {
+        "name": "Gluten-Free",
+        "slug": "gluten-free"
+    },
+    {
+        "name": "Spicy",
+        "slug": "spicy"
+    },
+    {
+        "name": "Low-Carb",
+        "slug": "low-carb"
+    },
+    {
+        "name": "Dessert",
+        "slug": "dessert"
+    },
+    {
+        "name": "Breakfast",
+        "slug": "breakfast"
+    },
+    {
+        "name": "Healthy",
+        "slug": "healthy"
+    },
+    {
+        "name": "Quick",
+        "slug": "quick"
+    },
+    {
+        "name": "Seafood",
+        "slug": "seafood"
+    }
+]

@@ -17,7 +17,7 @@ SHOPPING_CART_VIEW = 'й Корзине'
 
 FILE_HEADER = ('Список покупок. Дата создания: {date}')
 FILE_ROW = '▢ {index}. {name} - {amount} {measurement_unit}'
-FILE_NAME = "shopping_list_{unique_name}.txt"
+FILE_NAME = 'shopping_list_{unique_name}.txt'
 
 
 USER_NOT_FOUND = 'Пользователь не найден.'

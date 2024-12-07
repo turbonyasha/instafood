@@ -1,31 +1,34 @@
-MEASUREMENT_UNIT_ADMIN_TXT = 'Мера измерения'
+from dotenv import load_dotenv
+import os
+load_dotenv()
+MIN_VALUE = os.getenv('MIN_VALUE', 1)
+
+MEASUREMENT_UNIT_ADMIN_TXT = 'Единица измерения'
 FAVORITES_ADMIN_TXT = 'В избранном'
 
-VALID_EMPTY = 'Поле {field} не должно быть пустым!'
 VALID_AMOUNT = (
-    'Количество продуктов должно быть не '
-    'менее {settings.DEFAULT}, указано {amount}.'
+    f'Количество продуктов должно быть не '
+    f'менее {MIN_VALUE}, указано {{amount}}.'
 )
 VALID_TIME = (
-    'Минимальное время приготовления {settings.DEFAULT}'
-    'минута, указано {cooking_time}.'
+    f'Минимальное время приготовления {MIN_VALUE}'
+    f'минута, указано {{cooking_time}}.'
 )
 
-DEFAULT_ONE = 1
-
 VALID_USERNAME = (
-    "Никнейм '{value}' содержит недопустимые символы. "
-    'Разрешены только буквы, цифры, подчеркивания, точки, @ и +.'
+    "Логин '{value}' содержит следующие недопустимые символы: "
+    "'{invalid_characters}.'"
 )
 
 DATA_JOINED = 'Все {name} созданы.'
-DATA_FAIL = 'Ошибка при создании ингредиентов: возможно, есть дубликаты.'
-FAIL_FAIL = 'Файл {file} не найден.'
-FORMAT_FAIL = 'Ошибка при обработке файла {file}: {e}'
-
-NO_IMAGE = 'Нет изображения'
+DATA_FAIL = 'Ошибка при обработке файла {file}: {e}'
 
 INGREDIENTS = 'продукты'
 TAGS = 'метки'
 
-USERNAME_VALIDATION_PATTERN = r'^[a-zA-Z0-9][a-zA-Z0-9._+-]*$'
+USERNAME_VALIDATION_PATTERN = r'^[\w.@+-]+$'
+
+INGREDIENTS_JSON_NAME = 'ingredients.json'
+TAGS_JSON_NAME = 'tags.json'
+
+REDIRECT_RECIPE = '/recipes/{recipe_id}/'

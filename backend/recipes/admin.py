@@ -2,19 +2,21 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group
+from django.urls import reverse
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from . import constants as const
 from .models import (
-    FavoriteRecipes, Ingredient, Recipe, RecipeIngredient,
-    ShoppingCart, Tag, FoodgramUser, Subscription
+    FavoriteRecipes, FoodgramUser, Ingredient, Recipe,
+    RecipeIngredient, ShoppingCart, Subscription, Tag
 )
 
 user = get_user_model()
 
 
 class RecipeIngredientInline(admin.TabularInline):
-    """Инлайн форма для добавления ингредиентов к рецепту."""
+    """Инлайн форма для добавления продуктов к рецепту."""
     model = RecipeIngredient
     extra = 1
     fields = ('ingredient', 'amount', 'measurement_unit_display')
@@ -50,7 +52,6 @@ class RecipeAdmin(admin.ModelAdmin):
     search_fields = ('name', 'author__username', 'tags')
     list_filter = ('pub_date', 'tags', 'author')
     inlines = [RecipeIngredientInline, TagInline]
-    readonly_fields = ('image_preview',)
     filter_vertical = ('ingredients', 'tags')
 
     fieldsets = (
@@ -71,22 +72,19 @@ class RecipeAdmin(admin.ModelAdmin):
     @admin.display(description='Продукты')
     def ingredients_list(self, recipe):
         """Отображение списка продуктов, связанных с рецептом."""
-        ingredient_info = []
-        for ingredient in recipe.ingredients.all():
-            recipe_ingredient = ingredient.recipe_ingredients.filter(
-                recipe=recipe
-            ).first()
-            ingredient_info.append(
-                f'{ingredient.name}: {recipe_ingredient.amount} '
-                f'{ingredient.measurement_unit}'
-            )
-        return ', '.join(ingredient_info)
+        ingredient_info = [
+            f'{recipe_ingredient.ingredient.name}: '
+            f'{recipe_ingredient.amount} '
+            f'{recipe_ingredient.ingredient.measurement_unit}'
+            for recipe_ingredient in recipe.recipe_ingredients.all()
+        ]
+        return '<br>'.join(ingredient_info)
 
     @mark_safe
     @admin.display(description='Метки')
     def tags_list(self, recipe):
         """Отображение списка тегов, связанных с рецептом."""
-        return ', '.join(tag.name for tag in recipe.tags.all())
+        return '<br>'.join(tag.name for tag in recipe.tags.all())
 
     @mark_safe
     @admin.display(description='Картинка')
@@ -97,12 +95,12 @@ class RecipeAdmin(admin.ModelAdmin):
                 f'<img src="{recipe.image.url}" '
                 f'style="max-width: 150px; max-height: 150px;">'
             )
-        return const.NO_IMAGE
+        return ''
 
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-    """Админка для ингридиентов."""
+    """Админка для продуктов."""
     list_display = ('name', 'measurement_unit', 'usage_count')
     search_fields = ('name', 'measurement_unit')
     list_filter = ('measurement_unit', )
@@ -151,11 +149,16 @@ class FoodgramUserAdmin(BaseUserAdmin):
                 f'<img src="{user.avatar.url}" '
                 f'style="max-width: 150px; max-height: 150px;">'
             )
-        return const.NO_IMAGE
+        return ''
 
     @admin.display(description='Рецептов')
     def recipes_count(self, user):
-        return user.recipes_authors.count()
+        count = user.recipes.count()
+        if count > 0:
+            url = reverse('admin:recipes_recipe_changelist')
+            filter_url = f"{url}?author__id={user.id}"
+            return format_html('<a href="{}">{}</a>', filter_url, count)
+        return count
 
     @admin.display(description='Подписок')
     def subscriptions_count(self, user):
@@ -167,11 +170,37 @@ class FoodgramUserAdmin(BaseUserAdmin):
 
     @admin.display(description='ФИО')
     def get_full_name(self, user):
-        return f"{user.first_name} {user.last_name}"
+        return f'{user.first_name} {user.last_name}'
 
 
-admin.site.register(Subscription)
-admin.site.register(Tag)
-admin.site.register(FavoriteRecipes)
-admin.site.register(ShoppingCart)
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    """Админка для меток."""
+    list_display = ('name', 'slug')
+    search_fields = ('name',)
+
+
+@admin.register(Subscription)
+class SubscriptionAdmin(admin.ModelAdmin):
+    """Админка для подписок."""
+    list_display = ('user', 'author')
+    search_fields = ('user__username', 'author__username')
+    list_filter = ('user',)
+
+
+@admin.register(FavoriteRecipes)
+class FavoriteRecipesAdmin(admin.ModelAdmin):
+    """Админка для избранного."""
+    list_display = ('user', 'recipe')
+    search_fields = ('user__username', 'recipe__name')
+    list_filter = ('user',)
+
+
+@admin.register(ShoppingCart)
+class ShoppingCartAdmin(admin.ModelAdmin):
+    list_display = ('user', 'recipe')
+    search_fields = ('user__username', 'recipe__name')
+    list_filter = ('user',)
+
+
 admin.site.unregister(Group)

@@ -1,8 +1,9 @@
-from django.contrib.auth.models import AbstractUser
-from django.db import models
-from django.core.validators import MinValueValidator
+import os
 
-from . import constants as const
+from django.contrib.auth.models import AbstractUser
+from django.core.validators import MinValueValidator
+from django.db import models
+
 from .validators import username_validator
 
 
@@ -11,6 +12,7 @@ class FoodgramUser(AbstractUser):
     полем аватарки и подписки."""
 
     username = models.CharField(
+        verbose_name='Логин',
         max_length=150,
         unique=True,
         validators=[username_validator],
@@ -20,14 +22,10 @@ class FoodgramUser(AbstractUser):
         max_length=254)
     first_name = models.CharField(
         verbose_name='Имя',
-        blank=False,
-        null=False,
         max_length=150
     )
     last_name = models.CharField(
         verbose_name='Фамилия',
-        blank=False,
-        null=False,
         max_length=150
     )
     avatar = models.ImageField(
@@ -58,8 +56,8 @@ class Subscription(models.Model):
         FoodgramUser,
         on_delete=models.CASCADE,
         related_name='authors',
+        verbose_name='Автор рецептов',
         null=True,
-        verbose_name='Автор рецептов'
     )
 
     class Meta:
@@ -107,7 +105,7 @@ class Ingredient(models.Model):
     )
     measurement_unit = models.CharField(
         max_length=64,
-        verbose_name='Мера измерения',
+        verbose_name='Мера',
     )
 
     class Meta:
@@ -122,7 +120,7 @@ class Ingredient(models.Model):
         ]
 
     def __str__(self):
-        return f'{self.name}'
+        return self.name
 
 
 class Recipe(models.Model):
@@ -135,38 +133,27 @@ class Recipe(models.Model):
         FoodgramUser,
         on_delete=models.CASCADE,
         verbose_name='Автор',
-        null=False,
-        blank=False,
-        related_name='recipes_authors'
     )
     image = models.ImageField(
-        blank=False,
         verbose_name='Картинка',
-        null=False,
         upload_to='recipe/image',
     )
     text = models.TextField(
         verbose_name='Текст',
-        null=False,
-        blank=False,
     )
     ingredients = models.ManyToManyField(
         Ingredient,
         through='RecipeIngredient',
-        verbose_name='Ингредиенты',
-        blank=False,
+        verbose_name='Продукты',
     )
     tags = models.ManyToManyField(
         Tag,
         verbose_name='Теги',
-        related_name='recipes_tags'
     )
     cooking_time = models.PositiveIntegerField(
         verbose_name='Время готовки (мин.)',
-        null=False,
-        default=const.DEFAULT_ONE,
-        blank=False,
-        validators=(MinValueValidator(const.DEFAULT_ONE),)
+        default=os.getenv('MIN_VALUE', 1),
+        validators=(MinValueValidator(os.getenv('MIN_VALUE', 1)),)
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
@@ -174,6 +161,7 @@ class Recipe(models.Model):
     )
 
     class Meta:
+        default_related_name = 'recipes'
         ordering = ('-pub_date',)
         verbose_name = 'рецепт'
         verbose_name_plural = 'Рецепты'
@@ -184,9 +172,9 @@ class Recipe(models.Model):
 
 class RecipeIngredient(models.Model):
     """
-    Связующая модель для ингридиентов,
+    Связующая модель для продуктов,
     используемых в рецепте. Содержит поле, определяющее
-    количество ингридиентов для рецепта.
+    количество продуктов для рецепта.
     """
     recipe = models.ForeignKey(
         Recipe,
@@ -200,7 +188,7 @@ class RecipeIngredient(models.Model):
     )
     amount = models.PositiveIntegerField(
         verbose_name='Количество',
-        validators=(MinValueValidator(const.DEFAULT_ONE),)
+        validators=(MinValueValidator(os.getenv('MIN_VALUE', 1)),)
     )
 
     class Meta:

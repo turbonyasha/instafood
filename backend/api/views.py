@@ -1,27 +1,29 @@
+from django.db.models import Count, Exists, OuterRef, Sum
 from django.http import FileResponse
-from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from django.db.models import Count, Exists, OuterRef
+from django.utils import timezone
+
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import (
-    IsAuthenticated, IsAuthenticatedOrReadOnly
-)
+
 from djoser.views import UserViewSet
 
-from . import constants as const
+import api.constants as const
 from api.filters import RecipesFilterSet, UserFilterSet
+from api.paginations import LimitPageNumberPagination
 from api.permissions import SafeMethodPermission
-from api.utils import get_shoplist_text
 from api.serializers import (
     IngredientSerializer, RecipeWriteSerializer, RecipeRetriveSerializer,
     TagSerializer, RecipesSubscriptionSerializer, FoodgramUserSerializer,
-    SubscribtionSerializer
+    SubscriptionSerializer
 )
-from api.paginations import LimitPageNumberPagination
+from api.utils import get_shoplist_text
+
 from recipes.models import (
     FavoriteRecipes, Ingredient, Recipe,
     ShoppingCart, Tag, FoodgramUser, Subscription
@@ -34,6 +36,7 @@ class FoodgramUserViewSet(UserViewSet):
     serializer_class = FoodgramUserSerializer
     pagination_class = LimitPageNumberPagination
     filterset_class = UserFilterSet
+    permission_classes = [SafeMethodPermission]
 
     def get_queryset(self):
         queryset = self.queryset
@@ -44,7 +47,7 @@ class FoodgramUserViewSet(UserViewSet):
         )
         queryset = queryset.annotate(
             is_subscribed_annotated=Exists(subscribe),
-            recipes_count=Count('recipes_authors')
+            recipes_count=Count('recipes')
         )
         return queryset
 
@@ -60,57 +63,60 @@ class FoodgramUserViewSet(UserViewSet):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
             raise ValidationError(serializer.errors)
-        elif request.method == 'DELETE':
-            if user.avatar:
-                user.avatar.delete()
-            return Response(request.data, status=status.HTTP_204_NO_CONTENT)
-
-    @action(
-        detail=True,
-        methods=['post', 'delete'],
-        url_path='subscribe',
-        permission_classes=[IsAuthenticated]
-    )
-    def subscribe(self, request, id=None):
-        """Реализация добавления и удаления подписки на автора."""
-        user = self.request.user
-        author = get_object_or_404(FoodgramUser, id=id)
-        if request.method == 'POST':
-            if user == author:
-                raise ValidationError({'detail': const.SUBSCRIBTION_MYSELF})
-            _, created = Subscription.objects.get_or_create(
-                user=user, author=author
-            )
-            if not created:
-                raise ValidationError({'detail': const.SUBSCRIBTION_ALREADY})
-            return Response(SubscribtionSerializer(
-                _, context={'request': request, 'user': user}
-            ).data, status=status.HTTP_201_CREATED)
-        get_object_or_404(
-            Subscription, user=user, author=author
-        ).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if user.avatar:
+            user.avatar.delete()
+        return Response(request.data, status=status.HTTP_204_NO_CONTENT)
 
 
-class SubscriptionViewSet(viewsets.ModelViewSet):
+class SubscriptionListView(APIView):
     """Представление для списка подписок"""
-    serializer_class = SubscribtionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [SafeMethodPermission]
 
     def get_queryset(self):
-        return Subscription.objects.annotate(
-            recipes_count=Count('author__recipes_authors')
-        ).filter(user=self.request.user)
+        return FoodgramUser.objects.filter(
+            authors__user=self.request.user
+        ).annotate(
+            recipes_count=Count('recipes')
+        )
 
-    def perform_destroy(self, instance):
-        instance.delete()
+    def get(self, request):
+        return Response(SubscriptionSerializer(
+            self.get_queryset(),
+            many=True,
+            context={'request': request}
+        ).data)
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        author = serializer.validated_data['author']
+        if user == author:
+            raise ValidationError(const.SUBSCRIBTION_MYSELF)
+        if Subscription.objects.filter(user=user, author=author).exists():
+            raise ValidationError(const.SUBSCRIBTION_ALREADY)
+        serializer.save(user=user)
+
+    def post(self, request, id=None):
+        author = get_object_or_404(FoodgramUser, id=id)
+        Subscription.objects.create(user=request.user, author=author)
+        return Response(SubscriptionSerializer(
+            self.get_queryset().get(id=author.id),
+            context={'request': request}
+        ).data, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, id=None):
+        get_object_or_404(
+            Subscription,
+            user=request.user,
+            author=get_object_or_404(FoodgramUser, id=id)
+        ).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     """Представление для рецептов."""
     queryset = Recipe.objects.all()
     http_method_names = const.HTTP_METHOD_NAMES
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [SafeMethodPermission]
     filterset_class = RecipesFilterSet
 
     def get_queryset(self):
@@ -137,13 +143,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe, pk=recipe_pk)
         request_method = request.method
         if request_method == 'POST':
+            if model.objects.filter(user=user, recipe=recipe).exists():
+                raise ValidationError(const.RECIPE_ALREADY.format(
+                    message_text=(
+                        const.FAVORITE if
+                        model == FavoriteRecipes else const.SHOPCART
+                    )
+                ))
             model.objects.get_or_create(user=user, recipe=recipe)
             return Response(RecipesSubscriptionSerializer(
                 recipe
             ).data, status=status.HTTP_201_CREATED)
-        if request_method == 'DELETE':
-            get_object_or_404(model, user=user, recipe=recipe).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        get_object_or_404(model, user=user, recipe=recipe).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -156,13 +168,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='get-link')
     def get_short_link(self, request, pk):
         """Возвращает короткую ссылку."""
-        if Recipe.objects.filter(pk=pk).exists():
-            short_link = str(pk)
+        get_object_or_404(Recipe, pk=pk)
         return Response(
             {'short-link': request.build_absolute_uri(
                 reverse(
                     'recipes:redirect_to_recipe',
-                    args=[short_link]
+                    args=[pk]
                 )
             )}
         )
@@ -195,24 +206,35 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def get_and_download_shopping_cart(self, request):
         """Реализует получение пользователем файла со списком покупок."""
-        in_cart_recipes = ShoppingCart.objects.filter(
-            user=self.request.user
-        ).select_related('recipe').prefetch_related('recipe__ingredients')
-        ingredients = {}
-        ingredients_summary = {}
-        for cart_item in in_cart_recipes:
-            for recipe_ingredient in cart_item.recipe.recipe_ingredients.all():
-                ingredient_name = recipe_ingredient.ingredient
-                if ingredient_name not in ingredients:
-                    ingredients[ingredient_name] = ingredient_name
-                ingredients_summary[ingredient_name] = ingredients_summary.get(
-                    ingredient_name, 0
-                ) + recipe_ingredient.amount
+        in_cart_recipes = self.request.user.shoppingcarts.select_related(
+            'recipe'
+        ).prefetch_related('recipe__ingredients')
+        ingredients_details = {}
+        recipe_ingredients = (
+            self.request.user.shoppingcarts
+            .prefetch_related('recipe__ingredients')
+            .values('recipe__ingredients__name')
+            .annotate(total_amount=Sum('recipe__recipe_ingredients__amount'))
+            .values(
+                'recipe__ingredients__name',
+                'total_amount',
+                'recipe__ingredients__measurement_unit'
+            )
+        )
+        for recipe_ingredient in recipe_ingredients:
+            ingredient_name = recipe_ingredient['recipe__ingredients__name']
+            ingredients_details[ingredient_name] = {
+                'ingredient': (recipe_ingredient['recipe__ingredients__name']
+                               ['recipe__ingredients__name']),
+                'amount': recipe_ingredient['total_amount'],
+                'measurement_unit': recipe_ingredient[
+                    'recipe__ingredients__measurement_unit'
+                ]
+            }
         return FileResponse(
             get_shoplist_text(
                 in_cart_recipes,
-                ingredients,
-                ingredients_summary
+                ingredients_details
             ),
             as_attachment=True,
             filename=const.FILE_NAME.format(

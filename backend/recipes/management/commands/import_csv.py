@@ -1,9 +1,9 @@
 import csv
 import os
 
-from django.db import IntegrityError
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.db import IntegrityError
 from django.db import models
 from django.shortcuts import get_object_or_404
 
@@ -13,7 +13,7 @@ from recipes.models import Ingredient
 HELP = 'Импорт данных из CSV-файлов для Foodgram.'
 ROW_ERROR = (
     'Неправильное количество столбцов в CSV файле.'
-    "Ожидаются два столбца: 'name' и 'measurement_unit'."
+    "Ожидаются два столбца!"
 )
 
 

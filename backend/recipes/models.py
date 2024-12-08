@@ -18,6 +18,7 @@ class FoodgramUser(AbstractUser):
         validators=[username_validator],
     )
     email = models.EmailField(
+        verbose_name='Почта',
         unique=True,
         max_length=254)
     first_name = models.CharField(
@@ -105,7 +106,7 @@ class Ingredient(models.Model):
     )
     measurement_unit = models.CharField(
         max_length=64,
-        verbose_name='Мера',
+        verbose_name='Единица изменения',
     )
 
     class Meta:

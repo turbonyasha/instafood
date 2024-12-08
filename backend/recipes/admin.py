@@ -53,6 +53,7 @@ class RecipeAdmin(admin.ModelAdmin):
     list_filter = ('pub_date', 'tags', 'author')
     inlines = [RecipeIngredientInline, TagInline]
     filter_vertical = ('ingredients', 'tags')
+    readonly_fields = ('image_preview',)
 
     fieldsets = (
         (None, {
@@ -198,6 +199,7 @@ class FavoriteRecipesAdmin(admin.ModelAdmin):
 
 @admin.register(ShoppingCart)
 class ShoppingCartAdmin(admin.ModelAdmin):
+    """Админка для корзины."""
     list_display = ('user', 'recipe')
     search_fields = ('user__username', 'recipe__name')
     list_filter = ('user',)

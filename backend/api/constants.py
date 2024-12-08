@@ -6,7 +6,6 @@ RECIPE_ALREADY = 'Рецепт уже в {message_text}.'
 VALID_EMPTY = 'Поле {field} не должно быть пустым!'
 VALID_INGREDIENT = 'Продукт {ingredient} не существует!'
 VALID_UNIQUE = 'Эти {ids_name} не могут повторяться: {duplicates}'
-VALID_SUBSCRIBE = 'Вы не можете подписаться на самого себя.'
 
 INGREDIENTS = 'Продукты'
 TAGS = 'Теги'

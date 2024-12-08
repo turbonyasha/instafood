@@ -82,14 +82,14 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class IngredientSerializer(serializers.ModelSerializer):
-    """Сериализатор ингридиентов."""
+    """Сериализатор продуктов."""
     class Meta:
         model = Ingredient
         fields = '__all__'
 
 
 class RecipeIngredientRetriveSerializer(serializers.ModelSerializer):
-    """Сериализатор для чтения связи рецепта и ингридиента."""
+    """Сериализатор для чтения связи рецепта и продукта."""
     id = serializers.ReadOnlyField(
         source='ingredient.id'
     )
@@ -151,7 +151,7 @@ class RecipeRetriveSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
-    """Сериализатор для создания и обновления связи рецепта и ингридиента."""
+    """Сериализатор для создания и обновления связи рецепта и продукта."""
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     amount = serializers.IntegerField(
         validators=[MinValueValidator(os.getenv('MIN_VALUE', 1))]

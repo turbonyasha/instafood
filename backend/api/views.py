@@ -206,11 +206,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def get_and_download_shopping_cart(self, request):
         """Реализует получение пользователем файла со списком покупок."""
-        in_cart_recipes = self.request.user.shoppingcarts.select_related(
-            'recipe'
-        ).prefetch_related('recipe__ingredients')
         ingredients_details = {}
-        recipe_ingredients = (
+        for recipe_ingredient in (
             self.request.user.shoppingcarts
             .prefetch_related('recipe__ingredients')
             .values('recipe__ingredients__name')
@@ -220,12 +217,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 'total_amount',
                 'recipe__ingredients__measurement_unit'
             )
-        )
-        for recipe_ingredient in recipe_ingredients:
+        ):
             ingredient_name = recipe_ingredient['recipe__ingredients__name']
             ingredients_details[ingredient_name] = {
-                'ingredient': (recipe_ingredient['recipe__ingredients__name']
-                               ['recipe__ingredients__name']),
+                'ingredient': ingredient_name,
                 'amount': recipe_ingredient['total_amount'],
                 'measurement_unit': recipe_ingredient[
                     'recipe__ingredients__measurement_unit'
@@ -233,7 +228,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
             }
         return FileResponse(
             get_shoplist_text(
-                in_cart_recipes,
+                self.request.user.shoppingcarts.select_related(
+                    'recipe'
+                ).prefetch_related('recipe__ingredients'),
                 ingredients_details
             ),
             as_attachment=True,

@@ -7,6 +7,7 @@ from django.db import models
 from .validators import username_validator
 
 MIN_TIME = os.getenv('MIN_TIME', 1)
+MIN_AMOUNT = os.getenv('MIN_AMOUNT', 1)
 
 
 class FoodgramUser(AbstractUser):
@@ -194,7 +195,7 @@ class RecipeIngredient(models.Model):
     )
     amount = models.PositiveIntegerField(
         verbose_name='Количество',
-        validators=(MinValueValidator(os.getenv('MIN_AMOUNT', 1)),)
+        validators=(MinValueValidator(MIN_AMOUNT),)
     )
 
     class Meta:

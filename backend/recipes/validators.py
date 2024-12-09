@@ -7,16 +7,14 @@ from . import constants as const
 
 def username_validator(username):
     """Валидация для username с регулярным выражением."""
-    pattern = const.USERNAME_VALIDATION_PATTERN
-    invalid_characters = [
-        char for char in username if not re.match(pattern, char)
-    ]
-
+    invalid_characters = re.findall(
+        f'[^ {const.USERNAME_VALIDATION_PATTERN}]',
+        username
+    )
     if invalid_characters:
-        invalid_chars_str = ', '.join(invalid_characters)
         raise ValidationError(
             const.VALID_USERNAME.format(
                 value=username,
-                invalid_characters=invalid_chars_str
+                invalid_characters=''.join(invalid_characters)
             )
         )

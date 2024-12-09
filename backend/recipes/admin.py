@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group
 from django.urls import reverse
-from django.utils.html import format_html
+# from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from . import constants as const
@@ -50,7 +50,11 @@ class RecipeAdmin(admin.ModelAdmin):
         'ingredients_list', 'tags_list', 'image'
     )
     search_fields = ('name', 'author__username', 'tags')
-    list_filter = ('pub_date', 'tags', 'author')
+    list_filter = [
+        'pub_date',
+        'tags',
+        ('author', admin.RelatedOnlyFieldListFilter)
+    ]
     inlines = [RecipeIngredientInline, TagInline]
     filter_vertical = ('ingredients', 'tags')
     readonly_fields = ('image_preview',)
@@ -64,7 +68,7 @@ class RecipeAdmin(admin.ModelAdmin):
         }),
     )
 
-    @admin.display(description=const.FAVORITES_ADMIN_TXT)
+    @admin.display(description='В избранном')
     def favorited_count(self, recipe):
         """Метод для подсчета общего количества добавлений в избранное."""
         return recipe.favoriterecipess.count()
@@ -72,14 +76,12 @@ class RecipeAdmin(admin.ModelAdmin):
     @mark_safe
     @admin.display(description='Продукты')
     def ingredients_list(self, recipe):
-        """Отображение списка продуктов, связанных с рецептом."""
-        ingredient_info = [
+        return '<br>'.join([
             f'{recipe_ingredient.ingredient.name}: '
             f'{recipe_ingredient.amount} '
             f'{recipe_ingredient.ingredient.measurement_unit}'
             for recipe_ingredient in recipe.recipe_ingredients.all()
-        ]
-        return '<br>'.join(ingredient_info)
+        ])
 
     @mark_safe
     @admin.display(description='Метки')
@@ -91,12 +93,10 @@ class RecipeAdmin(admin.ModelAdmin):
     @admin.display(description='Картинка')
     def image_preview(self, recipe):
         """Отображение картинки на странице редактирования рецепта."""
-        if recipe.image:
-            return (
-                f'<img src="{recipe.image.url}" '
-                f'style="max-width: 150px; max-height: 150px;">'
-            )
-        return ''
+        return (
+            f'<img src="{recipe.image.url}" '
+            f'style="max-width: 150px; max-height: 150px;">'
+        ) if recipe.image else ''
 
 
 @admin.register(Ingredient)
@@ -152,13 +152,14 @@ class FoodgramUserAdmin(BaseUserAdmin):
             )
         return ''
 
+    @mark_safe
     @admin.display(description='Рецептов')
     def recipes_count(self, user):
         count = user.recipes.count()
         if count > 0:
             url = reverse('admin:recipes_recipe_changelist')
-            filter_url = f"{url}?author__id={user.id}"
-            return format_html('<a href="{}">{}</a>', filter_url, count)
+            filter_url = f'{url}?author__id={user.id}'
+            return f'<a href="{filter_url}">{count}</a>'
         return count
 
     @admin.display(description='Подписок')
@@ -177,8 +178,12 @@ class FoodgramUserAdmin(BaseUserAdmin):
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     """Админка для меток."""
-    list_display = ('name', 'slug')
+    list_display = ('name', 'slug', 'recipes_count')
     search_fields = ('name',)
+
+    @admin.display(description='Рецепты')
+    def recipes_count(self, recipe):
+        return recipe.recipes.count()
 
 
 @admin.register(Subscription)

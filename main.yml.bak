@@ -117,6 +117,8 @@ jobs:
             sudo echo "DEBUG=${{ secrets.DEBUG }}" >> .env
             sudo echo "USE_SQLITE=${{ secrets.USE_SQLITE }}" >> .env
             sudo echo "PROJECT_URL=${{ secrets.PROJECT_URL }}" >> .env
+            sudo echo "MIN_AMOUNT=${{ secrets.MIN_AMOUNT }}" >> .env
+            sudo echo "MIN_TIME=${{ secrets.MIN_TIME }}" >> .env
       - name: SSH commands to deploy
         uses: appleboy/ssh-action@master
         with:

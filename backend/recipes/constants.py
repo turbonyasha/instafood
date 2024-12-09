@@ -1,19 +1,16 @@
 import os
 
-from dotenv import load_dotenv
-
-load_dotenv()
-MIN_VALUE = os.getenv('MIN_VALUE', 1)
+MIN_AMOUNT = os.getenv('MIN_AMOUNT', 1)
+MIN_TIME = os.getenv('MIN_TIME', 1)
 
 MEASUREMENT_UNIT_ADMIN_TXT = 'Единица измерения'
-FAVORITES_ADMIN_TXT = 'В избранном'
 
 VALID_AMOUNT = (
     f'Количество продуктов должно быть не '
-    f'менее {MIN_VALUE}, указано {{amount}}.'
+    f'менее {MIN_AMOUNT}, указано {{amount}}.'
 )
 VALID_TIME = (
-    f'Минимальное время приготовления {MIN_VALUE}'
+    f'Минимальное время приготовления {MIN_TIME}'
     f'минута, указано {{cooking_time}}.'
 )
 
@@ -29,8 +26,3 @@ INGREDIENTS = 'продукты'
 TAGS = 'метки'
 
 USERNAME_VALIDATION_PATTERN = r'^[\w.@+-]+$'
-
-INGREDIENTS_JSON_NAME = 'ingredients.json'
-TAGS_JSON_NAME = 'tags.json'
-
-REDIRECT_RECIPE = '/recipes/{recipe_id}/'

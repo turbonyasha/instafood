@@ -6,6 +6,8 @@ from django.db import models
 
 from .validators import username_validator
 
+MIN_TIME = os.getenv('MIN_TIME', 1)
+
 
 class FoodgramUser(AbstractUser):
     """Модель пользователя с дополнительным
@@ -35,6 +37,9 @@ class FoodgramUser(AbstractUser):
         verbose_name='Аватар',
         upload_to='avatar/image'
     )
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
 
     class Meta:
         ordering = ('username',)
@@ -153,8 +158,8 @@ class Recipe(models.Model):
     )
     cooking_time = models.PositiveIntegerField(
         verbose_name='Время готовки (мин.)',
-        default=os.getenv('MIN_VALUE', 1),
-        validators=(MinValueValidator(os.getenv('MIN_VALUE', 1)),)
+        default=MIN_TIME,
+        validators=(MinValueValidator(MIN_TIME),)
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
@@ -189,7 +194,7 @@ class RecipeIngredient(models.Model):
     )
     amount = models.PositiveIntegerField(
         verbose_name='Количество',
-        validators=(MinValueValidator(os.getenv('MIN_VALUE', 1)),)
+        validators=(MinValueValidator(os.getenv('MIN_AMOUNT', 1)),)
     )
 
     class Meta:

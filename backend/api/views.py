@@ -16,7 +16,7 @@ from djoser.views import UserViewSet
 import api.constants as const
 from api.filters import RecipesFilterSet, UserFilterSet
 from api.paginations import LimitPageNumberPagination
-from api.permissions import SafeMethodPermission
+from api.permissions import AuthorOrSafeMethodPermission
 from api.serializers import (
     IngredientSerializer, RecipeWriteSerializer, RecipeRetriveSerializer,
     TagSerializer, RecipesSubscriptionSerializer, FoodgramUserSerializer,
@@ -25,7 +25,7 @@ from api.serializers import (
 from api.utils import get_shoplist_text
 
 from recipes.models import (
-    FavoriteRecipes, Ingredient, Recipe,
+    FavoriteRecipes, Ingredient, Recipe, RecipeIngredient,
     ShoppingCart, Tag, FoodgramUser, Subscription
 )
 
@@ -36,7 +36,7 @@ class FoodgramUserViewSet(UserViewSet):
     serializer_class = FoodgramUserSerializer
     pagination_class = LimitPageNumberPagination
     filterset_class = UserFilterSet
-    permission_classes = [SafeMethodPermission]
+    permission_classes = [AuthorOrSafeMethodPermission]
 
     def get_queryset(self):
         queryset = self.queryset
@@ -67,10 +67,40 @@ class FoodgramUserViewSet(UserViewSet):
             user.avatar.delete()
         return Response(request.data, status=status.HTTP_204_NO_CONTENT)
 
+    @action( 
+        detail=True,
+        methods=['post', 'delete'],
+        url_path='subscribe',
+        permission_classes=[IsAuthenticated]
+    )
+    def subscribe(self, request, id=None):
+        """Подписка пользователя."""
+        author = get_object_or_404(FoodgramUser.objects.annotate(
+            recipes_count=Count('recipes')
+        ), id=id)
+        if request.method == 'DELETE':
+            get_object_or_404(
+                Subscription,
+                user=request.user,
+                author=author
+            ).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        if request.user == author:
+            raise ValidationError(const.SUBSCRIBTION_MYSELF)
+        if Subscription.objects.filter(
+            user=request.user, author=author
+        ).exists():
+            raise ValidationError(const.SUBSCRIBTION_ALREADY)
+        Subscription.objects.create(user=request.user, author=author)
+        return Response(SubscriptionSerializer(
+            author, context={'request': request}
+        ).data, status=status.HTTP_201_CREATED)
+
 
 class SubscriptionListView(APIView):
     """Представление для списка подписок"""
-    permission_classes = [SafeMethodPermission]
+    permission_classes = [AuthorOrSafeMethodPermission]
+    pagination_class = LimitPageNumberPagination
 
     def get_queryset(self):
         return FoodgramUser.objects.filter(
@@ -86,37 +116,12 @@ class SubscriptionListView(APIView):
             context={'request': request}
         ).data)
 
-    def perform_create(self, serializer):
-        user = self.request.user
-        author = serializer.validated_data['author']
-        if user == author:
-            raise ValidationError(const.SUBSCRIBTION_MYSELF)
-        if Subscription.objects.filter(user=user, author=author).exists():
-            raise ValidationError(const.SUBSCRIBTION_ALREADY)
-        serializer.save(user=user)
-
-    def post(self, request, id=None):
-        author = get_object_or_404(FoodgramUser, id=id)
-        Subscription.objects.create(user=request.user, author=author)
-        return Response(SubscriptionSerializer(
-            self.get_queryset().get(id=author.id),
-            context={'request': request}
-        ).data, status=status.HTTP_201_CREATED)
-
-    def delete(self, request, id=None):
-        get_object_or_404(
-            Subscription,
-            user=request.user,
-            author=get_object_or_404(FoodgramUser, id=id)
-        ).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
 
 class RecipeViewSet(viewsets.ModelViewSet):
     """Представление для рецептов."""
     queryset = Recipe.objects.all()
     http_method_names = const.HTTP_METHOD_NAMES
-    permission_classes = [SafeMethodPermission]
+    permission_classes = [AuthorOrSafeMethodPermission]
     filterset_class = RecipesFilterSet
 
     def get_queryset(self):
@@ -138,24 +143,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return queryset
 
     def _favorite_or_shopping_cart_action(
-            self, request, model, user, recipe_pk
+            self, request, model, user, recipe_pk, message
     ):
         recipe = get_object_or_404(Recipe, pk=recipe_pk)
         request_method = request.method
-        if request_method == 'POST':
-            if model.objects.filter(user=user, recipe=recipe).exists():
-                raise ValidationError(const.RECIPE_ALREADY.format(
-                    message_text=(
-                        const.FAVORITE if
-                        model == FavoriteRecipes else const.SHOPCART
-                    )
-                ))
-            model.objects.get_or_create(user=user, recipe=recipe)
-            return Response(RecipesSubscriptionSerializer(
-                recipe
-            ).data, status=status.HTTP_201_CREATED)
-        get_object_or_404(model, user=user, recipe=recipe).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if request_method == 'DELETE':
+            get_object_or_404(model, user=user, recipe=recipe).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        if model.objects.filter(user=user, recipe=recipe).exists():
+            raise ValidationError(const.RECIPE_ALREADY.format(
+                message_text=message
+            ))
+        model.objects.get_or_create(user=user, recipe=recipe)
+        return Response(RecipesSubscriptionSerializer(
+            recipe
+        ).data, status=status.HTTP_201_CREATED)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -168,7 +170,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='get-link')
     def get_short_link(self, request, pk):
         """Возвращает короткую ссылку."""
-        get_object_or_404(Recipe, pk=pk)
         return Response(
             {'short-link': request.build_absolute_uri(
                 reverse(
@@ -176,6 +177,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     args=[pk]
                 )
             )}
+        ) if Recipe.objects.filter(pk=pk).exists() else Response(
+            status=status.HTTP_404_NOT_FOUND
         )
 
     @action(detail=True, methods=['post', 'delete'], url_path='favorite')
@@ -186,6 +189,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             model=FavoriteRecipes,
             user=request.user,
             recipe_pk=pk,
+            message=const.FAVORITE
         )
 
     @action(detail=True, methods=['post', 'delete'], url_path='shopping_cart')
@@ -196,6 +200,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             model=ShoppingCart,
             user=request.user,
             recipe_pk=pk,
+            message=const.SHOPCART
         )
 
     @action(
@@ -204,34 +209,39 @@ class RecipeViewSet(viewsets.ModelViewSet):
         url_path='download_shopping_cart',
         permission_classes=[IsAuthenticated]
     )
-    def get_and_download_shopping_cart(self, request):
+    def get_shopping_cart(self, request):
         """Реализует получение пользователем файла со списком покупок."""
-        ingredients_details = {}
-        for recipe_ingredient in (
-            self.request.user.shoppingcarts
-            .prefetch_related('recipe__ingredients')
-            .values('recipe__ingredients__name')
-            .annotate(total_amount=Sum('recipe__recipe_ingredients__amount'))
-            .values(
-                'recipe__ingredients__name',
-                'total_amount',
-                'recipe__ingredients__measurement_unit'
-            )
-        ):
-            ingredient_name = recipe_ingredient['recipe__ingredients__name']
-            ingredients_details[ingredient_name] = {
-                'ingredient': ingredient_name,
-                'amount': recipe_ingredient['total_amount'],
-                'measurement_unit': recipe_ingredient[
-                    'recipe__ingredients__measurement_unit'
-                ]
-            }
         return FileResponse(
             get_shoplist_text(
                 self.request.user.shoppingcarts.select_related(
                     'recipe'
                 ).prefetch_related('recipe__ingredients'),
-                ingredients_details
+                {
+                    recipe_ingredient['recipe__ingredients__name']: {
+                        'ingredient': recipe_ingredient[
+                            'recipe__ingredients__name'
+                        ],
+                        'amount': recipe_ingredient['total_amount'],
+                        'measurement_unit': recipe_ingredient[
+                            'recipe__ingredients__measurement_unit'
+                        ]
+                    }
+                    for recipe_ingredient in (
+                        self.request.user.shoppingcarts
+                        .prefetch_related('recipe__ingredients')
+                        .values(
+                            'recipe__ingredients__name',
+                            'recipe__ingredients__measurement_unit'
+                        )
+                        .annotate(total_amount=Sum(
+                            'recipe__recipe_ingredients__amount'
+                        ))
+                        .values(
+                            'recipe__ingredients__name',
+                            'total_amount',
+                            'recipe__ingredients__measurement_unit'
+                        ))
+                }
             ),
             as_attachment=True,
             filename=const.FILE_NAME.format(
@@ -246,7 +256,7 @@ class TagsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     pagination_class = None
-    permission_classes = [SafeMethodPermission]
+    permission_classes = [AuthorOrSafeMethodPermission]
 
 
 class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
@@ -256,4 +266,4 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
-    permission_classes = [SafeMethodPermission]
+    permission_classes = [AuthorOrSafeMethodPermission]

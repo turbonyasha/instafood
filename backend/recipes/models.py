@@ -6,8 +6,8 @@ from django.db import models
 
 from .validators import username_validator
 
-MIN_TIME = os.getenv('MIN_TIME', 1)
-MIN_AMOUNT = os.getenv('MIN_AMOUNT', 1)
+MIN_TIME = int(os.getenv('MIN_TIME', 1))
+MIN_AMOUNT = int(os.getenv('MIN_AMOUNT', 1))
 
 
 class FoodgramUser(AbstractUser):

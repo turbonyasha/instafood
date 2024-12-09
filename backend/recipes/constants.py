@@ -1,7 +1,7 @@
 import os
 
-MIN_AMOUNT = os.getenv('MIN_AMOUNT', 1)
-MIN_TIME = os.getenv('MIN_TIME', 1)
+MIN_AMOUNT = int(os.getenv('MIN_AMOUNT', 1))
+MIN_TIME = int(os.getenv('MIN_TIME', 1))
 
 MEASUREMENT_UNIT_ADMIN_TXT = 'Единица измерения'
 

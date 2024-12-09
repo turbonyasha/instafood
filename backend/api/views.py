@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 
-from rest_framework import filters, status, viewsets
+from rest_framework import generics, filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -108,10 +108,11 @@ class FoodgramUserViewSet(UserViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class SubscriptionListView(APIView):
+class SubscriptionListView(generics.ListAPIView):
     """Представление для списка подписок"""
     permission_classes = [AuthorOrSafeMethodPermission]
     pagination_class = LimitPageNumberPagination
+    serializer_class = SubscriptionSerializer
 
     def get_queryset(self):
         return FoodgramUser.objects.filter(
@@ -119,24 +120,6 @@ class SubscriptionListView(APIView):
         ).annotate(
             recipes_count=Count('recipes')
         )
-
-    def get(self, request):
-        queryset = self.get_queryset()
-        paginator = self.pagination_class()
-        page = paginator.paginate_queryset(queryset, request)
-        if page is not None:
-            serializer = SubscriptionSerializer(
-                page,
-                many=True,
-                context={'request': request}
-            )
-            return paginator.get_paginated_response(serializer.data)
-        serializer = SubscriptionSerializer(
-            queryset,
-            many=True,
-            context={'request': request}
-        )
-        return Response(serializer.data)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):

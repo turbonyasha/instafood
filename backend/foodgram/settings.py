@@ -150,7 +150,7 @@ DJOSER = {
 }
 
 CORS_ALLOWED_ORIGINS = [
-    os.getenv('PROJECT_URL', 'localhost:3000'),
+    os.getenv('PROJECT_URL', 'http://localhost:3000'),
 ]
 
 CORS_ALLOW_METHODS = [

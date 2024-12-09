@@ -1,6 +1,6 @@
 from django_filters import rest_framework as filters
 
-from recipes.models import Recipe, Tag, FoodgramUser
+from recipes.models import Ingredient, FoodgramUser, Recipe, Tag, FoodgramUser
 
 
 class RecipesFilterSet(filters.FilterSet):
@@ -52,3 +52,14 @@ class UserFilterSet(filters.FilterSet):
         if value:
             return queryset.exclude(subscribers__user=user)
         return queryset
+
+
+class IngredientFilter(filters.FilterSet):
+    name = filters.CharFilter(
+        field_name='name',
+        lookup_expr='icontains'
+    )
+
+    class Meta:
+        model = Ingredient
+        fields = ('name',)

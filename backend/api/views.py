@@ -1,4 +1,5 @@
 from django.db.models import Count, Exists, OuterRef, Sum
+from django_filters import rest_framework as django_filters
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -14,7 +15,9 @@ from rest_framework.exceptions import ValidationError
 from djoser.views import UserViewSet
 
 import api.constants as const
-from api.filters import RecipesFilterSet, UserFilterSet
+from api.filters import (
+    RecipesFilterSet, UserFilterSet, IngredientFilter
+)
 from api.paginations import LimitPageNumberPagination
 from api.permissions import AuthorOrSafeMethodPermission
 from api.serializers import (
@@ -264,13 +267,10 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     pagination_class = None
-    filter_backends = (filters.SearchFilter,)
+    filter_backends = (
+        django_filters.DjangoFilterBackend,
+        filters.SearchFilter
+    )
+    filterset_class = IngredientFilter
     search_fields = ('name',)
     permission_classes = [AuthorOrSafeMethodPermission]
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        search_param = self.request.query_params.get('name', None)
-        if search_param:
-            queryset = queryset.filter(name__icontains=search_param)
-        return queryset

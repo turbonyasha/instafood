@@ -9,7 +9,7 @@ load_dotenv()
 
 
 SECRET_KEY = os.getenv('SECRET_KEY')
-DEBUG = os.getenv('DEBUG')
+DEBUG = os.getenv('DEBUG', 'False')
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '"*"').split(',')
 
 
@@ -112,7 +112,7 @@ STATIC_ROOT = BASE_DIR / 'collected_static'
 
 MEDIA_URL = '/media/'
 
-if DEBUG:
+if DEBUG.lower() == 'true':
     MEDIA_ROOT = '/media'
 else:
     MEDIA_ROOT = BASE_DIR / 'media'

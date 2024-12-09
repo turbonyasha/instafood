@@ -82,22 +82,30 @@ class FoodgramUserViewSet(UserViewSet):
             recipes_count=Count('recipes')
         ), id=id)
         if request.method == 'DELETE':
-            get_object_or_404(
+            subscription = get_object_or_404(
                 Subscription,
                 user=request.user,
                 author=author
-            ).delete()
+            )
+            subscription.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         if request.user == author:
-            raise ValidationError({'detail': const.SUBSCRIBTION_MYSELF})
+            return Response(
+                {'detail': const.SUBSCRIBTION_MYSELF},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         if Subscription.objects.filter(
             user=request.user, author=author
         ).exists():
-            raise ValidationError({'detail': const.SUBSCRIBTION_ALREADY})
+            return Response(
+                {'detail': const.SUBSCRIBTION_ALREADY},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         Subscription.objects.create(user=request.user, author=author)
-        return Response(SubscriptionSerializer(
+        serializer = SubscriptionSerializer(
             author, context={'request': request}
-        ).data, status=status.HTTP_201_CREATED)
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class SubscriptionListView(APIView):

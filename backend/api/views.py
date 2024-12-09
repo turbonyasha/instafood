@@ -267,3 +267,10 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     permission_classes = [AuthorOrSafeMethodPermission]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search_param = self.request.query_params.get('name', None)
+        if search_param:
+            queryset = queryset.filter(name__icontains=search_param)
+        return queryset

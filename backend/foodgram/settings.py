@@ -11,7 +11,6 @@ load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG')
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '"*"').split(',')
-USE_SQLITE = os.getenv('USE_SQLITE', 'False')
 
 
 INSTALLED_APPS = [
@@ -62,7 +61,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'foodgram.wsgi.application'
 
 
-if USE_SQLITE:
+if os.getenv('USE_SQLITE', 'False').lower() == 'true':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',

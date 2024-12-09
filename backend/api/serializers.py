@@ -12,7 +12,8 @@ from recipes.models import (
     ShoppingCart, Tag, FoodgramUser, Subscription
 )
 
-MIN_VALUE = int(os.getenv('MIN_VALUE', 1))
+MIN_AMOUNT = int(os.getenv('MIN_AMOUNT', 1))
+MIN_TIME = int(os.getenv('MIN_TIME', 1))
 
 
 class FoodgramUserSerializer(UserSerializer):
@@ -161,7 +162,7 @@ class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
     """Сериализатор для создания и обновления связи рецепта и продукта."""
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     amount = serializers.IntegerField(
-        validators=[MinValueValidator(MIN_VALUE)]
+        validators=[MinValueValidator(MIN_AMOUNT)]
     )
 
     class Meta:
@@ -179,7 +180,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         many=True,
         queryset=Tag.objects.all())
     cooking_time = serializers.IntegerField(
-        validators=[MinValueValidator(MIN_VALUE)]
+        validators=[MinValueValidator(MIN_TIME)]
     )
 
     class Meta:

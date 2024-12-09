@@ -7,7 +7,6 @@ from api.views import (
     RecipeViewSet, SubscriptionListView, TagsViewSet
 )
 
-
 app_name = 'api'
 
 router = routers.DefaultRouter()
@@ -15,7 +14,6 @@ router.register(r'recipes', RecipeViewSet, basename='recipes')
 router.register(r'tags', TagsViewSet, basename='tags')
 router.register(r'users', FoodgramUserViewSet, basename='user')
 router.register(r'ingredients', IngredientsViewSet, basename='ingredients')
-
 
 urlpatterns = [
     path(

@@ -146,4 +146,3 @@ docker-compose.yml
 nginx_home.conf
 db.sqlite3.bak
 
-.github/workflows/main.yml

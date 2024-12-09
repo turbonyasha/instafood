@@ -3,7 +3,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group
 from django.urls import reverse
-# from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from . import constants as const

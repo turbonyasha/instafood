@@ -25,7 +25,7 @@ from api.serializers import (
 from api.utils import get_shoplist_text
 
 from recipes.models import (
-    FavoriteRecipes, Ingredient, Recipe, RecipeIngredient,
+    FavoriteRecipes, Ingredient, Recipe,
     ShoppingCart, Tag, FoodgramUser, Subscription
 )
 
@@ -67,7 +67,7 @@ class FoodgramUserViewSet(UserViewSet):
             user.avatar.delete()
         return Response(request.data, status=status.HTTP_204_NO_CONTENT)
 
-    @action( 
+    @action(
         detail=True,
         methods=['post', 'delete'],
         url_path='subscribe',

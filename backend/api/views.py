@@ -89,11 +89,11 @@ class FoodgramUserViewSet(UserViewSet):
             ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         if request.user == author:
-            raise ValidationError(const.SUBSCRIBTION_MYSELF)
+            raise ValidationError({'detail': const.SUBSCRIBTION_MYSELF})
         if Subscription.objects.filter(
             user=request.user, author=author
         ).exists():
-            raise ValidationError(const.SUBSCRIBTION_ALREADY)
+            raise ValidationError({'detail': const.SUBSCRIBTION_ALREADY})
         Subscription.objects.create(user=request.user, author=author)
         return Response(SubscriptionSerializer(
             author, context={'request': request}

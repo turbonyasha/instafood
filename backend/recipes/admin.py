@@ -116,6 +116,7 @@ class FoodgramUserAdmin(BaseUserAdmin):
     search_fields = ('first_name', 'last_name', 'username', 'email')
     list_display = (
         'username', 'get_full_name',
+        'last_name', 'first_name',
         'email', 'avatar', 'recipes_count',
         'subscriptions_count', 'followers_count',
         'is_active',

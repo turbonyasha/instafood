@@ -1,9 +1,5 @@
 [
     {
-        "name": "Вегетарианское",
-        "slug": "vegetarian"
-    },
-    {
         "name": "Без глютена",
         "slug": "gluten-free"
     },
@@ -26,10 +22,6 @@
     {
         "name": "Обед",
         "slug": "lunch"
-    },
-    {
-        "name": "Быстрые",
-        "slug": "quick"
     },
     {
         "name": "Напитки",

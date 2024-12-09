@@ -19,8 +19,8 @@ services:
       - db
   frontend:
     env_file: .env
-    build: ./frontend/
-    # command: cp -r /app/build/. /static/
+    image: turbonyasha/foodgram_frontend
+    command: cp -r /app/build/. /static/
     volumes:
       - static:/static
   gateway:

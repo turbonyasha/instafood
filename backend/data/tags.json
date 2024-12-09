@@ -1,42 +1,38 @@
 [
     {
-        "name": "Vegetarian",
+        "name": "Вегетарианское",
         "slug": "vegetarian"
     },
     {
-        "name": "Vegan",
-        "slug": "vegan"
-    },
-    {
-        "name": "Gluten-Free",
+        "name": "Без глютена",
         "slug": "gluten-free"
     },
     {
-        "name": "Spicy",
+        "name": "Острое",
         "slug": "spicy"
     },
     {
-        "name": "Low-Carb",
-        "slug": "low-carb"
+        "name": "Для детей",
+        "slug": "for-kids"
     },
     {
-        "name": "Dessert",
+        "name": "Десерт",
         "slug": "dessert"
     },
     {
-        "name": "Breakfast",
+        "name": "Завтрак",
         "slug": "breakfast"
     },
     {
-        "name": "Healthy",
-        "slug": "healthy"
+        "name": "Обед",
+        "slug": "lunch"
     },
     {
-        "name": "Quick",
+        "name": "Быстрые",
         "slug": "quick"
     },
     {
-        "name": "Seafood",
-        "slug": "seafood"
+        "name": "Напитки",
+        "slug": "drinks"
     }
 ]

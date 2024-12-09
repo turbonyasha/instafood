@@ -121,11 +121,22 @@ class SubscriptionListView(APIView):
         )
 
     def get(self, request):
-        return Response(SubscriptionSerializer(
-            self.get_queryset(),
+        queryset = self.get_queryset()
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset, request)
+        if page is not None:
+            serializer = SubscriptionSerializer(
+                page,
+                many=True,
+                context={'request': request}
+            )
+            return paginator.get_paginated_response(serializer.data)
+        serializer = SubscriptionSerializer(
+            queryset,
             many=True,
             context={'request': request}
-        ).data)
+        )
+        return Response(serializer.data)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):

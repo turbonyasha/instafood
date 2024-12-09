@@ -129,6 +129,7 @@ class FoodgramUserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
         ('ИНФОРМАЦИЯ О ПОЛЬЗОВАТЕЛЕ', {'fields': (
+            'last_name', 'first_name',
             'email', 'get_full_name',
         )}),
         ('РАЗРЕШЕНИЯ', {'fields': (

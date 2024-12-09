@@ -115,9 +115,9 @@ STATIC_ROOT = BASE_DIR / 'collected_static'
 MEDIA_URL = '/media/'
 
 if DEBUG:
-    MEDIA_ROOT = BASE_DIR / 'media'
-else:
     MEDIA_ROOT = '/media'
+else:
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -134,6 +134,7 @@ REST_FRAMEWORK = {
 
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
     ),
 
     'DEFAULT_PAGINATION_CLASS': 'api.paginations.LimitPageNumberPagination',

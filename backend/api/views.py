@@ -222,7 +222,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             'recipe__name'
         ).annotate(
             total_amount=Sum('recipe__recipe_ingredients__amount')
-        ).order_by('recipe__ingredients__name')
+        ).order_by('recipe__ingredients__name').distinct()
         return FileResponse(
             get_shoplist_text(
                 [

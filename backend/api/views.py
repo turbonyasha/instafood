@@ -150,11 +150,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
             self, request, model, user, recipe_pk, message
     ):
         recipe = get_object_or_404(Recipe, pk=recipe_pk)
-        if recipe.author == user:
-            if request.method == 'DELETE':
-                obj = get_object_or_404(model, user=user, recipe=recipe)
-                obj.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
+        if request.method == 'DELETE':
+            obj = get_object_or_404(model, user=user, recipe=recipe)
+            obj.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
         _, created = model.objects.get_or_create(user=user, recipe=recipe)
         if not created:
             raise ValidationError(const.RECIPE_ALREADY.format(

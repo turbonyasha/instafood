@@ -215,12 +215,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def get_shopping_cart(self, request):
         """Реализует получение пользователем файла со списком покупок."""
+        recipes = self.request.user.recipes.filter(
+            shoppingcarts__user=self.request.user
+        )
         return FileResponse(
             get_shoplist_text(
-                self.request.user.shoppingcarts.filter(
-                    user=self.request.user
-                ).values('recipe__name')
-                .distinct(),
+                recipes.values('id', 'name'),
                 {
                     recipe_ingredient['ingredients__name']: {
                         'ingredient': recipe_ingredient['ingredients__name'],
@@ -229,9 +229,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                             'ingredients__measurement_unit'
                         ]
                     }
-                    for recipe_ingredient in self.request.user.recipes.filter(
-                        shoppingcarts__user=self.request.user
-                    ).values(
+                    for recipe_ingredient in recipes.values(
                         'ingredients__name', 'ingredients__measurement_unit'
                     ).annotate(total_amount=Sum(
                         'recipe_ingredients__amount'

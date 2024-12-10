@@ -20,5 +20,5 @@ def get_shoplist_text(in_cart_recipes, ingredients_details):
             for index, ingredient in enumerate(ingredients_details.values(), 1)
         ],
         const.FOR_RECIPES,
-        *[recipe['recipe__name'] for recipe in in_cart_recipes]
+        *[recipe['name'] for recipe in in_cart_recipes]
     ])

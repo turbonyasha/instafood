@@ -67,6 +67,11 @@ class RecipeAdmin(admin.ModelAdmin):
     )
     readonly_fields = ('image_display',)
 
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        if db_field.name == 'tags':
+            kwargs['label'] = 'Мои теги'
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
+
     @admin.display(description='В избранном')
     def favorited_count(self, recipe):
         """Метод для подсчета общего количества добавлений в избранное."""

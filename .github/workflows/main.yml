@@ -67,11 +67,6 @@ jobs:
           docker build -t ${{ secrets.DOCKER_USERNAME }}/foodgram_backend ./backend
           docker push ${{ secrets.DOCKER_USERNAME }}/foodgram_backend
 
-      - name: Build and push frontend image
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/foodgram_frontend ./frontend
-          docker push ${{ secrets.DOCKER_USERNAME }}/foodgram_frontend
-
       - name: Build and push gateway image
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/foodgram_gateway ./nginx

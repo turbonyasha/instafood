@@ -84,12 +84,6 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @mark_safe
     @admin.display(description='Метки')
-    def tags(self, recipe):
-        """Отображение списка тегов, связанных с рецептом."""
-        return recipe.tags.all()
-
-    @mark_safe
-    @admin.display(description='Метки')
     def tags_list(self, recipe):
         """Отображение списка тегов, связанных с рецептом."""
         return '<br>'.join(tag.name for tag in recipe.tags.all())

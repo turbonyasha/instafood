@@ -1,7 +1,5 @@
-import os
-
-MIN_AMOUNT = int(os.getenv('MIN_AMOUNT', 1))
-MIN_TIME = int(os.getenv('MIN_TIME', 1))
+MIN_AMOUNT = 1
+MIN_TIME = 1
 
 MEASUREMENT_UNIT_ADMIN_TXT = 'Единица измерения'
 
@@ -25,4 +23,6 @@ DATA_FAIL = 'Ошибка при обработке файла {file}: {e}'
 INGREDIENTS = 'продукты'
 TAGS = 'метки'
 
-USERNAME_VALIDATION_PATTERN = r'^[\w.@+-]+$'
+USERNAME_VALIDATION_PATTERN = r'[\w.@+-]+'
+
+RECIPE_NOT_FOUND = 'Рецепт с ID {id} не найден.'

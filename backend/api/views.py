@@ -9,8 +9,7 @@ from rest_framework import generics, filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound
 
 from djoser.views import UserViewSet
 
@@ -51,7 +50,7 @@ class FoodgramUserViewSet(UserViewSet):
         queryset = queryset.annotate(
             is_subscribed_annotated=Exists(subscribe),
             recipes_count=Count('recipes')
-        )
+        ).order_by('id')
         return queryset
 
     @action(detail=False, methods=['put', 'delete'], url_path='me/avatar')
@@ -78,9 +77,8 @@ class FoodgramUserViewSet(UserViewSet):
     )
     def subscribe(self, request, id=None):
         """Подписка пользователя."""
-        author = get_object_or_404(FoodgramUser.objects.annotate(
-            recipes_count=Count('recipes')
-        ), id=id)
+        author = get_object_or_404(FoodgramUser, id=id)
+        author.recipes_count = author.recipes.count()
         if request.method == 'DELETE':
             subscription = get_object_or_404(
                 Subscription,
@@ -94,14 +92,15 @@ class FoodgramUserViewSet(UserViewSet):
                 {'detail': const.SUBSCRIBTION_MYSELF},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        if Subscription.objects.filter(
-            user=request.user, author=author
-        ).exists():
+        _, created = Subscription.objects.get_or_create(
+            user=request.user,
+            author=author
+        )
+        if not created:
             return Response(
                 {'detail': const.SUBSCRIBTION_ALREADY},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        Subscription.objects.create(user=request.user, author=author)
         serializer = SubscriptionSerializer(
             author, context={'request': request}
         )
@@ -119,7 +118,7 @@ class SubscriptionListView(generics.ListAPIView):
             authors__user=self.request.user
         ).annotate(
             recipes_count=Count('recipes')
-        )
+        ).order_by('id')
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -151,15 +150,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
             self, request, model, user, recipe_pk, message
     ):
         recipe = get_object_or_404(Recipe, pk=recipe_pk)
-        request_method = request.method
-        if request_method == 'DELETE':
-            get_object_or_404(model, user=user, recipe=recipe).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        if model.objects.filter(user=user, recipe=recipe).exists():
+        if recipe.author == user:
+            if request.method == 'DELETE':
+                obj = get_object_or_404(model, user=user, recipe=recipe)
+                obj.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        _, created = model.objects.get_or_create(user=user, recipe=recipe)
+        if not created:
             raise ValidationError(const.RECIPE_ALREADY.format(
                 message_text=message
             ))
-        model.objects.get_or_create(user=user, recipe=recipe)
         return Response(RecipesSubscriptionSerializer(
             recipe
         ).data, status=status.HTTP_201_CREATED)
@@ -175,16 +175,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='get-link')
     def get_short_link(self, request, pk):
         """Возвращает короткую ссылку."""
+        if not Recipe.objects.filter(pk=pk).exists():
+            raise NotFound('Рецепт не найден.')
         return Response(
             {'short-link': request.build_absolute_uri(
                 reverse(
                     'recipes:redirect_to_recipe',
                     args=[pk]
                 )
-            )}
-        ) if Recipe.objects.filter(pk=pk).exists() else Response(
-            status=status.HTTP_404_NOT_FOUND
-        )
+            )})
 
     @action(detail=True, methods=['post', 'delete'], url_path='favorite')
     def favorite(self, request, pk=None):
@@ -218,36 +217,26 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Реализует получение пользователем файла со списком покупок."""
         return FileResponse(
             get_shoplist_text(
-                self.request.user.shoppingcarts.select_related(
-                    'recipe'
-                ).prefetch_related('recipe__ingredients'),
+                self.request.user.shoppingcarts.filter(
+                    user=self.request.user
+                ).values('recipe__name')
+                .distinct(),
                 {
-                    recipe_ingredient['recipe__ingredients__name']: {
-                        'ingredient': recipe_ingredient[
-                            'recipe__ingredients__name'
-                        ],
+                    recipe_ingredient['ingredients__name']: {
+                        'ingredient': recipe_ingredient['ingredients__name'],
                         'amount': recipe_ingredient['total_amount'],
                         'measurement_unit': recipe_ingredient[
-                            'recipe__ingredients__measurement_unit'
+                            'ingredients__measurement_unit'
                         ]
                     }
-                    for recipe_ingredient in (
-                        self.request.user.shoppingcarts
-                        .prefetch_related('recipe__ingredients')
-                        .values(
-                            'recipe__ingredients__name',
-                            'recipe__ingredients__measurement_unit'
-                        )
-                        .annotate(total_amount=Sum(
-                            'recipe__recipe_ingredients__amount'
-                        ))
-                        .values(
-                            'recipe__ingredients__name',
-                            'total_amount',
-                            'recipe__ingredients__measurement_unit'
-                        ))
-                }
-            ),
+                    for recipe_ingredient in self.request.user.recipes.filter(
+                        shoppingcarts__user=self.request.user
+                    ).values(
+                        'ingredients__name', 'ingredients__measurement_unit'
+                    ).annotate(total_amount=Sum(
+                        'recipe_ingredients__amount'
+                    )).order_by('ingredients__name')
+                }),
             as_attachment=True,
             filename=const.FILE_NAME.format(
                 unique_name=timezone.now().strftime('%Y-%m-%d_%H-%M-%S')

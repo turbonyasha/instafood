@@ -12,9 +12,6 @@ from recipes.models import (
     ShoppingCart, Tag, FoodgramUser, Subscription
 )
 
-MIN_AMOUNT = int(os.getenv('MIN_AMOUNT', 1))
-MIN_TIME = int(os.getenv('MIN_TIME', 1))
-
 
 class FoodgramUserSerializer(UserSerializer):
     """Сериализатор для чтения пользователя."""
@@ -67,19 +64,14 @@ class SubscriptionSerializer(FoodgramUserSerializer):
             'recipes', 'recipes_count'
         )
 
-    def get_recipes(self, author):
+    def get_recipes(self, user):
         return RecipesSubscriptionSerializer(
             Recipe.objects.filter(
-                author=author
+                author=user
             )[:int(self.context.get('request').GET.get(
                 'recipes_limit', 10**10
             ))],
             many=True).data
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['recipes_count'] = instance.recipes_count
-        return representation
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -162,7 +154,7 @@ class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
     """Сериализатор для создания и обновления связи рецепта и продукта."""
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     amount = serializers.IntegerField(
-        validators=[MinValueValidator(MIN_AMOUNT)]
+        validators=[MinValueValidator(int(os.getenv('MIN_AMOUNT', 1)))]
     )
 
     class Meta:
@@ -180,7 +172,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         many=True,
         queryset=Tag.objects.all())
     cooking_time = serializers.IntegerField(
-        validators=[MinValueValidator(MIN_TIME)]
+        validators=[MinValueValidator(int(os.getenv('MIN_TIME', 1)))]
     )
 
     class Meta:
@@ -224,16 +216,15 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return attrs
 
     def _create_ingredients(self, recipe, ingredients_data):
-        if ingredients_data:
-            recipe.recipe_ingredients.all().delete()
-            RecipeIngredient.objects.bulk_create(
-                RecipeIngredient(
-                    recipe=recipe,
-                    ingredient=ingredient['id'],
-                    amount=ingredient['amount']
-                )
-                for ingredient in ingredients_data
+        recipe.recipe_ingredients.all().delete()
+        RecipeIngredient.objects.bulk_create(
+            RecipeIngredient(
+                recipe=recipe,
+                ingredient=ingredient['id'],
+                amount=ingredient['amount']
             )
+            for ingredient in ingredients_data
+        )
 
     def create(self, validated_data):
         tags_data = validated_data.pop('tags', [])

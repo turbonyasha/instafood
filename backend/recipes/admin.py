@@ -44,9 +44,9 @@ class TagInline(admin.TabularInline):
 class RecipeAdmin(admin.ModelAdmin):
     """Админка для рецепта."""
     list_display = (
-        'id', 'name', 'author', 'pub_date',
+        'id', 'name', 'author',
         'cooking_time', 'favorited_count',
-        'ingredients_list', 'tags_list', 'image'
+        'ingredients_list', 'tags_list', 'image_display'
     )
     search_fields = ('name', 'author__username', 'tags')
     list_filter = [
@@ -56,16 +56,16 @@ class RecipeAdmin(admin.ModelAdmin):
     ]
     inlines = [RecipeIngredientInline, TagInline]
     filter_vertical = ('ingredients', 'tags')
-    readonly_fields = ('image_preview',)
 
     fieldsets = (
         (None, {
             'fields': ('name', 'author', 'text', 'cooking_time',)
         }),
         ('КАРТИНКА В РЕЦЕПТЕ', {
-            'fields': ('image', 'image_preview',)
+            'fields': ('image',)
         }),
     )
+    readonly_fields = ('image_display',)
 
     @admin.display(description='В избранном')
     def favorited_count(self, recipe):
@@ -75,12 +75,12 @@ class RecipeAdmin(admin.ModelAdmin):
     @mark_safe
     @admin.display(description='Продукты')
     def ingredients_list(self, recipe):
-        return '<br>'.join([
+        return '<br>'.join(
             f'{recipe_ingredient.ingredient.name}: '
             f'{recipe_ingredient.amount} '
             f'{recipe_ingredient.ingredient.measurement_unit}'
             for recipe_ingredient in recipe.recipe_ingredients.all()
-        ])
+        )
 
     @mark_safe
     @admin.display(description='Метки')
@@ -90,7 +90,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @mark_safe
     @admin.display(description='Картинка')
-    def image_preview(self, recipe):
+    def image_display(self, recipe):
         """Отображение картинки на странице редактирования рецепта."""
         return (
             f'<img src="{recipe.image.url}" '
@@ -116,20 +116,19 @@ class FoodgramUserAdmin(BaseUserAdmin):
     search_fields = ('first_name', 'last_name', 'username', 'email')
     list_display = (
         'username', 'get_full_name',
-        'last_name', 'first_name',
-        'email', 'avatar', 'recipes_count',
+        'email', 'recipes_count',
         'subscriptions_count', 'followers_count',
-        'is_active',
+        'is_active', 'avatar_display'
     )
     readonly_fields = (
-        'password', 'avatar_preview', 'recipes_count',
-        'subscriptions_count', 'followers_count', 'get_full_name'
+        'recipes_count', 'subscriptions_count',
+        'followers_count', 'get_full_name',
+        'avatar_display'
     )
 
     fieldsets = (
-        (None, {'fields': ('username', 'password')}),
+        (None, {'fields': ('username',)}),
         ('ИНФОРМАЦИЯ О ПОЛЬЗОВАТЕЛЕ', {'fields': (
-            'last_name', 'first_name',
             'email', 'get_full_name',
         )}),
         ('РАЗРЕШЕНИЯ', {'fields': (
@@ -139,13 +138,13 @@ class FoodgramUserAdmin(BaseUserAdmin):
             'subscriptions_count', 'followers_count', 'recipes_count',
         )}),
         ('АВАТАР ПОЛЬЗОВАТЕЛЯ', {
-            'fields': ('avatar', 'avatar_preview',)
+            'fields': ('avatar',)
         }),
     )
 
     @mark_safe
     @admin.display(description='Аватар')
-    def avatar_preview(self, user):
+    def avatar_display(self, user):
         if user.avatar:
             return (
                 f'<img src="{user.avatar.url}" '
@@ -157,11 +156,11 @@ class FoodgramUserAdmin(BaseUserAdmin):
     @admin.display(description='Рецептов')
     def recipes_count(self, user):
         count = user.recipes.count()
-        if count > 0:
-            url = reverse('admin:recipes_recipe_changelist')
-            filter_url = f'{url}?author__id={user.id}'
-            return f'<a href="{filter_url}">{count}</a>'
-        return count
+        return '<a href="{url}?author__id={user_id}">{count}</a>'.format(
+            url=reverse('admin:recipes_recipe_changelist'),
+            user_id=user.id,
+            count=count if count > 0 else ''
+        )
 
     @admin.display(description='Подписок')
     def subscriptions_count(self, user):

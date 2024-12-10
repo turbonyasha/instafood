@@ -1,5 +1,4 @@
 from django.urls import path, include
-from djoser.views import TokenCreateView
 from rest_framework import routers
 
 from api.views import (
@@ -22,6 +21,5 @@ urlpatterns = [
         name='subscriptions-list'
     ),
     path('', include(router.urls)),
-    path('auth/token/', TokenCreateView.as_view(), name='auth-token'),
     path('auth/', include('djoser.urls.authtoken')),
 ]

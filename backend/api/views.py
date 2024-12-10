@@ -214,26 +214,31 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def get_shopping_cart(self, request):
         """Реализует получение пользователем файла со списком покупок."""
-        recipes = self.request.user.recipes.filter(
-            shoppingcarts__user=self.request.user
-        )
+        shopping_carts = self.request.user.shoppingcarts.prefetch_related(
+            'recipe__ingredients'
+        ).values(
+            'recipe__ingredients__name',
+            'recipe__ingredients__measurement_unit',
+            'recipe__name'
+        ).annotate(
+            total_amount=Sum('recipe__recipe_ingredients__amount')
+        ).order_by('recipe__ingredients__name')
         return FileResponse(
             get_shoplist_text(
-                recipes.values('id', 'name'),
-                {
-                    recipe_ingredient['ingredients__name']: {
-                        'ingredient': recipe_ingredient['ingredients__name'],
-                        'amount': recipe_ingredient['total_amount'],
-                        'measurement_unit': recipe_ingredient[
-                            'ingredients__measurement_unit'
-                        ]
-                    }
-                    for recipe_ingredient in recipes.values(
-                        'ingredients__name', 'ingredients__measurement_unit'
-                    ).annotate(total_amount=Sum(
-                        'recipe_ingredients__amount'
-                    )).order_by('ingredients__name')
-                }),
+                [
+                    {'name': recipe['recipe__name']}
+                    for recipe in shopping_carts
+                ],
+                [{
+                    'ingredient': ingredient['recipe__ingredients__name'],
+                    'amount': ingredient['total_amount'],
+                    'measurement_unit': ingredient[
+                        'recipe__ingredients__measurement_unit'
+                    ]
+                }
+                    for ingredient in shopping_carts
+                ]
+            ),
             as_attachment=True,
             filename=const.FILE_NAME.format(
                 unique_name=timezone.now().strftime('%Y-%m-%d_%H-%M-%S')

@@ -38,6 +38,8 @@ class TagInline(admin.TabularInline):
     extra = 1
     fields = ('tag',)
     list_filter = ('tag',)
+    verbose_name = 'Метка'
+    verbose_name_plural = 'Метки'
 
 
 @admin.register(Recipe)
@@ -66,11 +68,6 @@ class RecipeAdmin(admin.ModelAdmin):
         }),
     )
     readonly_fields = ('image_display',)
-
-    def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == 'tags':
-            kwargs['label'] = 'Мои теги'
-        return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     @admin.display(description='В избранном')
     def favorited_count(self, recipe):
@@ -187,8 +184,8 @@ class TagAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
     @admin.display(description='Рецепты')
-    def recipes_count(self, recipe):
-        return recipe.recipes.count()
+    def recipes_count(self, tag):
+        return tag.recipes.count()
 
 
 @admin.register(Subscription)

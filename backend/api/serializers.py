@@ -11,6 +11,7 @@ from recipes.models import (
     FavoriteRecipes, Ingredient, Recipe, RecipeIngredient,
     ShoppingCart, Tag, FoodgramUser, Subscription
 )
+from recipes.constants import MIN_AMOUNT, MIN_TIME
 
 
 class FoodgramUserSerializer(UserSerializer):
@@ -72,6 +73,13 @@ class SubscriptionSerializer(FoodgramUserSerializer):
                 'recipes_limit', 10**10
             ))],
             many=True).data
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['recipes_count'] = int(str(
+            data['recipes_count']
+        ).replace('{{ recipes_count }}', str(instance.recipes_count)))
+        return data
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -154,7 +162,7 @@ class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
     """Сериализатор для создания и обновления связи рецепта и продукта."""
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     amount = serializers.IntegerField(
-        validators=[MinValueValidator(int(os.getenv('MIN_AMOUNT', 1)))]
+        validators=[MinValueValidator(MIN_AMOUNT)]
     )
 
     class Meta:
@@ -172,7 +180,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         many=True,
         queryset=Tag.objects.all())
     cooking_time = serializers.IntegerField(
-        validators=[MinValueValidator(int(os.getenv('MIN_TIME', 1)))]
+        validators=[MinValueValidator(MIN_TIME)]
     )
 
     class Meta:

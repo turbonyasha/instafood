@@ -23,6 +23,6 @@ DATA_FAIL = 'Ошибка при обработке файла {file}: {e}'
 INGREDIENTS = 'продукты'
 TAGS = 'метки'
 
-USERNAME_VALIDATION_PATTERN = r'[\w.@+-]+'
+USERNAME_VALIDATION_PATTERN = r'^[\w.@+-]+$'
 
 RECIPE_NOT_FOUND = 'Рецепт с ID {id} не найден.'

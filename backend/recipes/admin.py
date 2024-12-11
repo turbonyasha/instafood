@@ -161,8 +161,8 @@ class FoodgramUserAdmin(BaseUserAdmin):
         return '<a href="{url}?author__id={user_id}">{count}</a>'.format(
             url=reverse('admin:recipes_recipe_changelist'),
             user_id=user.id,
-            count=count if count > 0 else ''
-        )
+            count=count
+        ) if count > 0 else ''
 
     @admin.display(description='Подписок')
     def subscriptions_count(self, user):

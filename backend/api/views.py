@@ -25,11 +25,11 @@ from api.serializers import (
     SubscriptionSerializer
 )
 from api.utils import get_shoplist_text
-
 from recipes.models import (
     FavoriteRecipes, Ingredient, Recipe,
     ShoppingCart, Tag, FoodgramUser, Subscription
 )
+from recipes.constants import RECIPE_NOT_FOUND
 
 
 class FoodgramUserViewSet(UserViewSet):
@@ -50,7 +50,7 @@ class FoodgramUserViewSet(UserViewSet):
         queryset = queryset.annotate(
             is_subscribed_annotated=Exists(subscribe),
             recipes_count=Count('recipes')
-        ).order_by('id')
+        ).order_by(*FoodgramUser._meta.ordering)
         return queryset
 
     @action(detail=False, methods=['put', 'delete'], url_path='me/avatar')
@@ -78,14 +78,12 @@ class FoodgramUserViewSet(UserViewSet):
     def subscribe(self, request, id=None):
         """Подписка пользователя."""
         author = get_object_or_404(FoodgramUser, id=id)
-        author.recipes_count = author.recipes.count()
         if request.method == 'DELETE':
-            subscription = get_object_or_404(
+            get_object_or_404(
                 Subscription,
                 user=request.user,
                 author=author
-            )
-            subscription.delete()
+            ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         if request.user == author:
             return Response(
@@ -101,10 +99,9 @@ class FoodgramUserViewSet(UserViewSet):
                 {'detail': const.SUBSCRIBTION_ALREADY},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        serializer = SubscriptionSerializer(
+        return Response(SubscriptionSerializer(
             author, context={'request': request}
-        )
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        ).data, status=status.HTTP_201_CREATED)
 
 
 class SubscriptionListView(generics.ListAPIView):
@@ -118,7 +115,7 @@ class SubscriptionListView(generics.ListAPIView):
             authors__user=self.request.user
         ).annotate(
             recipes_count=Count('recipes')
-        ).order_by('id')
+        ).order_by(*FoodgramUser._meta.ordering)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -151,8 +148,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     ):
         recipe = get_object_or_404(Recipe, pk=recipe_pk)
         if request.method == 'DELETE':
-            obj = get_object_or_404(model, user=user, recipe=recipe)
-            obj.delete()
+            get_object_or_404(model, user=user, recipe=recipe).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         _, created = model.objects.get_or_create(user=user, recipe=recipe)
         if not created:
@@ -175,7 +171,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_short_link(self, request, pk):
         """Возвращает короткую ссылку."""
         if not Recipe.objects.filter(pk=pk).exists():
-            raise NotFound('Рецепт не найден.')
+            raise NotFound(RECIPE_NOT_FOUND.format(
+                id=pk
+            ))
         return Response(
             {'short-link': request.build_absolute_uri(
                 reverse(
@@ -214,30 +212,20 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def get_shopping_cart(self, request):
         """Реализует получение пользователем файла со списком покупок."""
-        shopping_carts = self.request.user.shoppingcarts.prefetch_related(
-            'recipe__ingredients'
-        ).values(
-            'recipe__ingredients__name',
-            'recipe__ingredients__measurement_unit',
-            'recipe__name'
-        ).annotate(
-            total_amount=Sum('recipe__recipe_ingredients__amount')
-        ).order_by('recipe__ingredients__name').distinct()
         return FileResponse(
             get_shoplist_text(
-                [
-                    {'name': recipe['recipe__name']}
-                    for recipe in shopping_carts
-                ],
-                [{
-                    'ingredient': ingredient['recipe__ingredients__name'],
-                    'amount': ingredient['total_amount'],
-                    'measurement_unit': ingredient[
-                        'recipe__ingredients__measurement_unit'
-                    ]
-                }
-                    for ingredient in shopping_carts
-                ]
+                Recipe.objects.filter(
+                    shoppingcarts__user=self.request.user
+                ).distinct(),
+                self.request.user.shoppingcarts.prefetch_related(
+                    'recipe__ingredients'
+                ).values(
+                    'recipe__ingredients__name',
+                    'recipe__ingredients__measurement_unit',
+                    'recipe__name'
+                ).annotate(
+                    total_amount=Sum('recipe__recipe_ingredients__amount')
+                ).order_by('recipe__ingredients__name').distinct()
             ),
             as_attachment=True,
             filename=const.FILE_NAME.format(

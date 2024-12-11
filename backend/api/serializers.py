@@ -55,7 +55,10 @@ class AvatarSerializer(serializers.ModelSerializer):
 class SubscriptionSerializer(FoodgramUserSerializer):
     """Сериализатор для чтения подписок."""
     recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.IntegerField()
+    recipes_count = serializers.IntegerField(
+        source='recipes.count',
+        read_only=True
+    )
 
     class Meta(FoodgramUserSerializer.Meta):
         model = FoodgramUser
@@ -72,13 +75,6 @@ class SubscriptionSerializer(FoodgramUserSerializer):
                 'recipes_limit', 10**10
             ))],
             many=True).data
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data['recipes_count'] = int(str(
-            data['recipes_count']
-        ).replace('{{ recipes_count }}', str(instance.recipes_count)))
-        return data
 
 
 class TagSerializer(serializers.ModelSerializer):

@@ -16,7 +16,7 @@ services:
     volumes:
       - media:/media
       - static:/backend_static
-      - ./docs:/usr/share/nginx/html/api/docs
+      - ./docs:/backend_static
     depends_on:
       - db
   frontend:

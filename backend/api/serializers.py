@@ -1,5 +1,4 @@
 from collections import Counter
-import os
 
 from django.core.validators import MinValueValidator
 from djoser.serializers import UserSerializer
